@@ -1,0 +1,50 @@
+tree_species,db_reference,type,subtype,r_s_ratio,leaflitter_factor,bg_turnover,dry,dry_c,mature_tree_diam_cm,mature_age_years,equation_type,a,b,c,d,e,f,j,k,exp,poly,quad,cyp,cork,b_poly,b_exp,b_common,b_others,b_citrus,b_cork,b_a,b_b,b_c,b_d,max_biomass_kg,max_lifespan,comment,comment_max_lifespan
+other herbaceous,herbaceous perennials - other,non-tree,herb,0.67,0.03,0.03,0.55,0.5,1.28,0,,,,,,,,,,,,,,,,,,,,,,,,,15000,,root:shoot from strawberry,
+strawberry,herbaceous perennials - strawberry,non-tree,herb,0.67,0.03,0.03,0.55,0.5,1.28,0,,,,,,,,,,,,,,,,,,,,,,,,,15000,,,
+blackberry,bushes/shrubs - blackberry,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+blueberry,bushes/shrubs - blueberry,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+broom,bushes/shrubs - broom,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+chamise/greasewood,bushes/shrubs - chamise/greasewood,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+heather/erica,bushes/shrubs - heather/erica,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+laustrine,bushes/shrubs - laustrine,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+lavender,bushes/shrubs - lavender,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+lentisc/mastic,bushes/shrubs - lentisk/mastic,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+other shrub,bushes/shrubs - other,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+rockrose,bushes/shrubs - rockrose,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+rosemary,bushes/shrubs - rosemary,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+sagebrush,bushes/shrubs - sagebrush,non-tree,shrub,0.85,0.03,0.03,0.55,0.5,1.28,0,Exponential,-3.4262,2.5031,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,,,
+apple tree,fruit tree - apple,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,24,25,Polynomial,0,0.164,2.047,1,1,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0.8326,1,-2.2086,15000,35,,"Ref. 55, apple (full size)"
+apricot tree,fruit tree - apricot,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,18,25,Exponential,-2.1041,2.3691,1,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0.8326,1,-2.2086,15000,30,,Ref. 55
+avocado,fruit tree - avocado,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,36,25,Polynomial,0,0.225,2.341,0.55,0.73,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0.49,0.923,0,15000,30,,Ref. 57
+clementine,fruit tree - clementine,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,13.6,25,Exponential,0.79,0.48,1,1.0092,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,-1.54,1.09,1.05,0,15000,35,,"Ref. 55, citrus"
+date palm,palm tree - date palm,tree,palm tree,0.2,0.03,0.03,0.55,0.5,60,25,Exponential,-3.3488,2.7483,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,150,Root:shoot conservative low value assumed,Ref. 56
+fig tree,fruit tree - fig,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,16.5,25,Polynomial,0,0.225,2.341,0.32,0.73,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0.49,0.923,0,15000,75,,Ref. 55
+lemon tree,fruit tree - lemon,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,12,25,Exponential,-2.086,2.342,1,1.023,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,35,,"Ref. 55, citrus"
+mandarin,fruit tree - mandarin,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,13.6,25,Exponential,0.79,0.48,1,1.0092,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,-1.54,1.09,1.05,0,15000,35,,"Ref. 55, citrus"
+mango,fruit tree - mango,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,60,25,Polynomial,0,0.225,2.341,0.55,0.73,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0.49,0.923,0,15000,200,,Ref. 55
+olive tree,fruit tree - olive,tree,tree,0.3,0.03,0.03,0.55,0.5,24.38,25,Polynomial,0,0.1202,2.2159,1,1,0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0.0154,2.7322,0,15000,500,,Ref. 55
+orange tree,fruit tree - orange,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,13.6,25,Exponential,0.79,0.48,1,1.0092,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,-1.54,1.09,1.05,0,15000,35,,"Ref. 55, citrus"
+other fruit tree,fruit tree - other,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,20.4,25,Exponential,-2.134,2.53,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,100,,rounded average of all fruit trees
+peach tree,fruit tree - peach,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,12,25,Exponential,-2.1041,2.3691,1,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0.8326,1,-2.2086,15000,20,,Ref. 55
+pear tree,fruit tree - pear,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,18,25,Polynomial,0,0.164,2.047,1,1,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0.8326,1,-2.2086,15000,45,,Ref. 55
+pomegranate,fruit tree - pomegranate,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,12,25,Exponential,-2.134,2.53,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,200,,Ref. 55
+pomelo,fruit tree - pomelo,tree,fruit tree,0.67,0.03,0.03,0.55,0.5,12,25,Exponential,-2.134,2.53,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,35,,"Ref. 55, citrus"
+almond,nut tree - almond,tree,nut tree,0.74,0.03,0.03,0.55,0.5,18.28,25,Exponential,-2.1041,2.3691,1,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,-3.1677,2.2796,1,0,15000,50,,Ref. 55
+chestnut,nut tree - chestnut,tree,nut tree,0.46,0.03,0.03,0.55,0.5,80,25,Polynomial,0,0.1236,2.3929,1,1,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,300,,Ref. 58
+hazelnut,nut tree - hazelnut,tree,nut tree,0.26,0.03,0.03,0.55,0.5,20,25,Polynomial,0,0.2017,2.1924,1,1,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,80,,Ref. 58
+other nut tree,nut tree - other,tree,nut tree,0.51,0.03,0.03,0.55,0.5,36.5,25,Exponential,-2.1041,2.3691,1,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,-3.1677,2.2796,1,1,15000,200,"Biomass: using ""other tree"" until specific pars are found. Others: average of nut trees",rounded average of all nut trees
+pistachio,nut tree - pistachio,tree,nut tree,0.85,0.03,0.03,0.55,0.5,24,25,Polynomial,0,0.053,2.283,1,1,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,150,,Ref. 56
+walnut,nut tree - walnut,tree,nut tree,0.24,0.03,0.03,0.55,0.5,40,25,Exponential,-1.8324,2.4675,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,60,,Ref. 56
+ash,tree - ash,tree,tree,0.2,0.03,0.03,0.55,0.5,80,25,Polynomial,0,0.1333,2.5172,1,1,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,400,,Ref. 58
+carob,tree - carob,tree,tree,0.2,0.03,0.03,0.55,0.5,25.6,25,Exponential,-2.1041,2.3691,1,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,-3.1677,2.2796,1,1,15000,100,"Biomass: using ""other tree"" until specific pars are found",Ref. 56
+cork oak,tree - cork oak,tree,tree,0.46,0.03,0.03,0.55,0.5,80,25,Others,-3.2433,2.4134,-7.5788,3.5021,-4.4855,2.2495,-4.2891,1.9694,0,0,0,0,1,0,1,0,0,0,1,0,-1.1182,1.7559,0,15000,200,,Ref. 58
+cypress,tree - cypress,tree,tree,0.312,0.03,0.03,0.55,0.5,87.5,25,Others,-9.6272,2.44043,-8.78154,1.06269,-7.39626,0.701574,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,15000,150,,rounded average of all trees
+eucalyptos,tree - eucalyptus,tree,tree,0.46,0.03,0.03,0.55,0.5,125,25,Exponential,-1.762,2.2644,1,1,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,150,,rounded average of all trees
+holm oak,tree - holm oak,tree,tree,0.46,0.03,0.03,0.55,0.5,80,25,Exponential,-1.7417,2.3699,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0.0495,2.451,0,15000,200,,Ref. 58
+maple/sycamore,tree - maple/sycamore,tree,tree,0.2,0.03,0.03,0.55,0.5,100,25,Polynomial,0,0.1349,2.4361,1,1,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,350,,Ref. 58
+other tree,tree - other,tree,tree,0.26,0.03,0.03,0.55,0.5,83.3,25,Exponential,-2.1041,2.3691,1,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,-3.1677,2.2796,1,1,15000,150,,rounded average of all trees
+pine tree,tree - pine,tree,tree,0.27,0.03,0.03,0.55,0.5,57.5,25,Polynomial,0,0.1182,2.3281,1,1,0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0.038872,2.066783,0,15000,500,100,Ref. 58
+poplar tree,tree - poplar,tree,tree,0.21,0.03,0.03,0.55,0.5,120,25,Exponential,-2.311,2.3538,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,200,,Ref. 58
+turkey oak,tree - turkey oak,tree,tree,0.35,0.03,0.03,0.55,0.5,80,25,Exponential,-1.42,1.886,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,15000,200,,"Ref. 58, holm/cork oak"
+grape vines,vine - grapevine,non-tree,vine,0.27,0.03,0.03,0.55,0.5,14.6,25,Polynomial,0,157.97,0.629,0.001,1,0,2,0,0,1,0,0,0,0,0,0,1,0,0,0,0.7631,1,1.3494,15000,,,
+other vines,vine - other,non-tree,vine,0.27,0.03,0.03,0.55,0.5,14.6,25,Polynomial,0,157.97,0.629,0.001,1,0,2,0,0,1,0,0,0,0,0,0,1,0,0,0,0.7631,1,1.3494,15000,,"Biomass: using ""grapevine""",

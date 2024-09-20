@@ -1,0 +1,20 @@
+type,sub_type,carbon_content_fresh,dry,dry_c,max_t_ha,dr_ratio_type
+manure,cattle manure,0.07,0.22,0.29,20,farmyard_manure
+manure,chicken manure,0.21,0.5,0.41,20,farmyard_manure
+manure,horse manure,0.09,0.32,0.29,20,farmyard_manure
+manure,pig manure,0.08,0.24,0.32,20,farmyard_manure
+manure,sheep manure,0.09,0.31,0.29,20,farmyard_manure
+manure,generic manure,0.1,0.32,0.32,20,farmyard_manure
+compost,green/plant-based compost,0.23,0.5,0.45,20,farmyard_manure
+compost,manure-based compost,0.1,0.5,0.2,20,farmyard_manure
+compost,mushroom compost,0.12,0.4,0.31,20,farmyard_manure
+compost,generic compost,0.16,0.5,0.32,20,farmyard_manure
+mulch,hay/straw,0.35,0.8,0.44,20,grassland
+mulch,leaves,0.35,0.8,0.44,20,grassland
+mulch,wood bark/wood chips,0.35,0.8,0.44,20,woody
+mulch,generic mulch,0.35,0.8,0.44,20,grassland
+slurry,cattle slurry,0.02,0.07,0.29,60,farmyard_manure
+slurry,pig slurry,0.02,0.07,0.32,60,farmyard_manure
+slurry,generic slurry,0.02,0.07,0.31,60,farmyard_manure
+fodder,generic fodder,0.35,0.8,0.44,20,grassland
+biochar,generic biochar,0.66,0.93,0.71,20,woody

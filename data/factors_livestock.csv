@@ -1,0 +1,22 @@
+species,category,description,db_reference,type (Mode_parameter v2.5.1),is_generic,mass_kg_per_animal,ef_enteric_fermentation_kg_head,n_excretion_rate_kg_1000am,c_kg_per_year_per_animal,vs_kg_per_tonne_per_day,days_on_farm_per_year,dmi_kg_per_kg_per_day,max_head_per_farm
+dairy cows,mature females,> 2 years,mature females (> 2 years),Dairy Cattle,TRUE,600,126,0.54,975.5,8.4,365,0.025,10000
+cattle,mature females,> 2 years,mature females (non-dairy),Beef Cattle,TRUE,500,67,0.39,532.3,5.5,365,0.025,10000
+cattle,mature males,> 2 years,mature males,Other Cattle,FALSE,600,81,0.38,754.9,6.5,365,0.025,10000
+cattle,growing cattle,6 - 24 months (dairy or beef),growing cattle (6 - 24 months),Other Cattle,FALSE,400,57,0.47,518.7,6.7,365,0.025,10000
+cattle,calves,< 6 months,calves (< 6 months),Calves (less than 6 months),FALSE,230,16,0.37,138,3.1,180,0.025,10000
+swine,sows,adult reproductive females,sows,Sows/boars,FALSE,190,1.5,0.38,88.3,2.4,365,0.025,10000
+swine,boars,adult males,boars,Sows/boars,FALSE,190,1.5,0.38,88.3,2.4,365,0.025,10000
+swine,finishers,non reproductive swine used for meet: 3-6 months,finishers (3 - 6 months),Pigs (3-6 months),TRUE,76,1.5,0.76,78,5.3,90,0.025,10000
+swine,piglets,< 3 months or < 20 kg,piglets,Piglets (less than 3 months),FALSE,30,1,0.65,26.1,4.5,90,0.025,10000
+swine,other swine,general category for adult swine > 3 months,other swine,Pigs (3-6 months),FALSE,76,1.5,0.76,78,5.3,90,0.025,10000
+chicken,layer hens,egg laying chicken,layer hens,Poultry (hens layers),FALSE,1.9,0,0.87,3.2,8.6,365,0.025,10000
+chicken,broilers,chicken for meat,broilers,Poultry,FALSE,1.2,0,1.14,3.7,16.1,365,0.025,10000
+chicken,other chicken,general category for chicken,other chicken,Poultry,TRUE,1.4,0,0.99,3.3,12.3,365,0.025,10000
+turkeys,turkeys,all turkeys,turkeys,Turkey,TRUE,6.8,0,0.74,13.6,10.3,365,0.025,10000
+sheep,mature females,Female adult sheep: > 1 year,mature females (> 1 year),Sheep,TRUE,40,9,0.36,63.5,8.2,365,0.025,10000
+sheep,mature males,Male adult sheep: > 1 year,mature males (> 1 year),Sheep,FALSE,40,9,0.36,63.5,8.2,365,0.025,10000
+sheep,lambs,< 1 year,lambs (< 1 year),Lambs (less than 1 year),FALSE,20,9,0.36,31.7,8.2,365,0.025,10000
+goats,mature females,Female adult goats: > 1 year,mature females (> 1 year),Goats,TRUE,40,9,0.46,69.7,9,365,0.025,10000
+goats,mature males,Male adult goats: > 1 year,mature males (> 1 year),Goats,FALSE,40,9,0.46,69.7,9,365,0.025,10000
+goats,goat kids,< 1 year,goat kids (< 1 year),Goat Kids (less than 1 year),FALSE,20,9,0.46,34.8,9,365,0.025,10000
+ducks,ducks,all ducks,ducks,,TRUE,2.7,0,0.83,3.9,7.4,365,0.025,10000

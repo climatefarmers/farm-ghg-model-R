@@ -1,0 +1,46 @@
+crop,db_reference,type,n_fixing_frac,n_ag,n_bg,r_s_ratio,dry,dry_c,ag_turnover,bg_turnover,max_prod_ag_t_ha_fresh,comments_n_fixing_frac,comments_others,comments_dryc
+aromatics,aromatics,aromatics,0,0.008,0.009,0.22,0.85,0.44,1,1,98,-,Table 11.1A Generic value,table 4.16: mean of all
+mix of grass and legumes,cover crop - mix of grass and legumes,cover crop,0.23,0.021,0.0185,0.47,0.9,0.44,1,1,20,Table 5. 75th percentile of all,Table 11.1A N-fixing + Non-N-fixing forages ,table 4.16: mean of all
+multi-species cover crop,cover crop - multi-species cover crop,cover crop,0.23,0.021,0.0185,0.47,0.9,0.44,1,1,20,Table 5. 75th percentile of all,Table 11.1A N-fixing + Non-N-fixing forages ,table 4.16: mean of all
+other cover crop,cover crop - other,cover crop,0.23,0.021,0.0185,0.47,0.9,0.44,1,1,20,Table 5. 75th percentile of all,Table 11.1A N-fixing + Non-N-fixing forages ,table 4.16: mean of all
+single or multiple grasses,cover crop - single or multiple grasses,cover crop,0,0.015,0.012,0.54,0.9,0.44,1,1,20,-,Table 11.1A Non-N-fixing forages ,table 4.16: mean of all
+single or multiple legumes,cover crop - single or multiple legumes,cover crop,1,0.027,0.022,0.4,0.9,0.44,1,1,20,,Table 11.1A N-fixing forages ,table 4.16: mean of all
+grass-clover mixtures,forage - grass-clover mixtures,forage,0.14,0.025,0.016,0.8,0.9,0.44,1,1,20,Table 5. 75th percentile of Rye-Clover,Table 11.1A Grass-Clover Mixtures,table 4.16: mean of all
+italian ryegrass,forage - italian ryegrass,forage,0,0.015,0.012,0.8,0.9,0.44,1,1,20,-,Table 11.1A Perennial Grasses,table 4.16: mean of all
+n-fixing forages,forage - n-fixing forages,forage,1,0.027,0.022,0.4,0.9,0.44,1,1,20,-,Table 11.1A N-fixing forages ,table 4.16: mean of all
+non-legume hay,forage - non-legume hay,forage,0,0.015,0.012,0.54,0.9,0.44,1,1,20,-,Table 11.1A Non-N-fixing forages ,table 4.16: mean of all
+non-n-fixing forages,forage - non-n-fixing forages,forage,0,0.015,0.012,0.54,0.9,0.44,1,1,20,-,Table 11.1A Non-N-fixing forages ,table 4.16: mean of all
+other forage,forage - other,forage,0.25,0.0194,0.0148,0.616,0.9,0.44,1,1,20,average of forages,average of forages,average of forages
+sudangrass,forage - sudangrass,forage,0,0.015,0.012,0.8,0.9,0.44,1,1,20,-,Table 11.1A Perennial Grasses,table 4.16: mean of all
+other fruits,fruits and vegetables - other fruit,fruits and vegetables,0,0.008,0.009,0.22,0.1,0.44,1,1,262,-,Table 11.1A Generic value. Dry: ref 39,table 4.16: mean of all
+other vegetables,fruits and vegetables - other vegetable,fruits and vegetables,0,0.008,0.009,0.22,0.1,0.44,1,1,262,-,Table 11.1A Generic value. Dry: ref 39,table 4.16: mean of all
+squash,fruits and vegetables - squash,fruits and vegetables,0,0.008,0.009,0.22,0.1,0.44,1,1,262,-,Table 11.1A Generic value. Dry: ref 39,table 4.16: mean of all
+generic plant mixture,generic plant mixture,cover crop,0.23,0.021,0.0185,0.47,0.9,0.44,1,1,20,Table 5. 75th percentile of all,Table 11.1A N-fixing + Non-N-fixing forages ,table 4.16: mean of all
+barley,grains/cereals - barley,grains/cereals,0,0.007,0.014,0.22,0.89,0.456,1,1,24,,Table 11.1A,table 4.16
+maize,grains/cereals - maize,grains/cereals,0,0.006,0.007,0.22,0.87,0.471,1,1,58,,Table 11.1A,table 4.16
+millet,grains/cereals - millet,grains/cereals,0,0.007,0.009,0.2,0.9,0.46,1,1,15,,Table 11.1A completed with Generic Grains,"table 4.16: mean of wheat, barley maize"
+oats,grains/cereals - oats,grains/cereals,0,0.007,0.008,0.25,0.89,0.46,1,1,13,,Table 11.1A,"table 4.16: mean of wheat, barley maize"
+other grains,grains/cereals - other,grains/cereals,0,0.006,0.009,0.2,0.88,0.46,1,1,24,,Table 11.1A Generic Grains,"table 4.16: mean of wheat, barley maize"
+rice,grains/cereals - rice,grains/cereals,0,0.007,0.009,0.16,0.89,0.414,1,1,45,,Table 11.1A completed with Generic Grains,table 4.16
+rye,grains/cereals - rye,grains/cereals,0,0.005,0.011,0.2,0.88,0.46,1,1,18,,Table 11.1A completed with Generic Grains,"table 4.16: mean of wheat, barley maize"
+sorghum,grains/cereals - sorghum,grains/cereals,0,0.007,0.006,0.2,0.89,0.46,1,1,43,,Table 11.1A completed with Generic Grains,"table 4.16: mean of wheat, barley maize"
+spring wheat,grains/cereals - spring wheat,grains/cereals,0,0.006,0.009,0.28,0.89,0.485,1,1,24,,Table 11.1A,table 4.16
+triticale,grains/cereals - triticale,grains/cereals,0,0.006,0.009,0.2,0.88,0.44,1,1,24,,Table 11.1A Generic Grains,table 4.16: mean of all
+wheat,grains/cereals - wheat,grains/cereals,0,0.006,0.009,0.23,0.89,0.485,1,1,24,,Table 11.1A Winter wheat,table 4.16
+winter wheat,grains/cereals - winter wheat,grains/cereals,0,0.006,0.009,0.23,0.89,0.485,1,1,24,,Table 11.1A,table 4.16
+alfalfa,legumes - alfalfa,legumes,1,0.027,0.019,0.4,0.9,0.44,1,1,24,,Table 11.1A,table 4.16: mean of all
+beans,legumes - beans,legumes,1,0.008,0.008,0.19,0.91,0.44,1,1,10,,Table 11.1A Beans and Pulses,table 4.16: mean of all
+cowpea,legumes - cowpea,legumes,1,0.008,0.008,0.19,0.91,0.44,1,1,18,,Table 11.1A Beans and Pulses,table 4.16: mean of all
+lupins,legumes - lupins,legumes,1,0.027,0.022,0.4,0.9,0.44,1,1,18,,Table 11.1A N-fixing forages,table 4.16: mean of all
+other legumes,legumes - other,legumes,1,0.016,0.013,0.28,0.905,0.44,1,1,18,,average of legumes,average of legumes
+peas,legumes - peas,legumes,1,0.008,0.008,0.19,0.91,0.44,1,1,18,,Table 11.1A Beans and Pulses,table 4.16: mean of all
+soybeans,legumes - soybeans,legumes,1,0.008,0.008,0.19,0.91,0.44,1,1,18,,Table 11.1A Beans and Pulses,table 4.16: mean of all
+vetch,legumes - vetch,legumes,1,0.027,0.022,0.4,0.9,0.44,1,1,18,,Table 11.1A N-fixing forages,table 4.16: mean of all
+other oilseeds,oilseeds - other,oilseeds,0,0.012,0.009,0.22,0.895,0.44,1,1,17,,average of oilseeds,average of oilseeds
+peanuts,oilseeds - peanuts,oilseeds,0,0.016,0.009,0.22,0.94,0.44,1,1,10,,Table 11.1A Peanuts completed with Generic value,table 4.16: mean of all
+rapeseed,oilseeds - rapeseed,oilseeds,0,0.012,0.009,0.22,0.895,0.44,1,1,17,,average of oilseeds,average of oilseeds
+sunflower,oilseeds - sunflower,oilseeds,0,0.008,0.009,0.22,0.85,0.44,1,1,14,,Table 11.1A Generic value,table 4.16: mean of all
+other annual crop,other annual crop,generic,0,0.008,0.009,0.22,0.85,0.44,1,1,24,-,Table 11.1A Generic value,table 4.16: mean of all
+beets,roots/tubers - beets,roots/tubers,0,0.019,0.014,0.2,0.22,0.423,1,1,274,,Table 11.1A Potatoes and Tubers,table 4.16: potatoes
+other roots and tubers,roots/tubers - other,roots/tubers,0,0.019,0.014,0.2,0.22,0.423,1,1,96,,Table 11.1A Potatoes and Tubers,table 4.16: potatoes
+potatoes,roots/tubers - potatoes,roots/tubers,0,0.019,0.014,0.2,0.22,0.423,1,1,96,,Table 11.1A Potatoes and Tubers,table 4.16: potatoes

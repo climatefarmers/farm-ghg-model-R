@@ -1,0 +1,96 @@
+﻿type,en,es,pt
+perennial,Herbaceous perennials - Strawberry,Herbáceas perennes - Fresa,Herbáceas perenes - Morango
+perennial,Herbaceous perennials - Other,Herbáceas perennes - Otros,Herbáceas perenes - Outras
+perennial,Bushes/Shrubs - Blackberry,Arbustos - Zarzamora,Arbustos / Arbustos - Amora
+perennial,Bushes/Shrubs - Blueberry,Arbustos - Arándano,Arbustos / Arbustos - Mirtilo
+perennial,Bushes/Shrubs - Broom,Arbustos - Retama,Arbustos / Arbustos - Tojo
+perennial,Bushes/Shrubs - Chamise/Greasewood,Arbustos - Chamizo / Adelfa,Arbustos / Arbustos - Chamise / Vedal
+perennial,Bushes/Shrubs - Heather/Erica,Arbustos - Brezo,Arbustos / Arbustos - Urze / Erica
+perennial,Bushes/Shrubs - Laustrine,Arbustos - Lauro,Arbustos / Arbustos - Laustrine
+perennial,Bushes/Shrubs - Lavender,Arbustos - Lavanda,Arbustos / Arbustos - Lavanda
+perennial,Bushes/Shrubs - Rockrose,Arbustos - Jara,Arbustos / Arbustos - Esteva
+perennial,Bushes/Shrubs - Rosemary,Arbustos - Romero,Arbustos / Arbustos - Alecrim
+perennial,Bushes/Shrubs - Sagebrush,Arbustos - Artemisa,Arbustos / Arbustos - Sálvia
+perennial,Bushes/Shrubs - Other,Arbustos - Otros,Arbustos / Arbustos - Outros
+perennial,Fruit tree - Apple,Frutal - Manzano,Macieira
+perennial,Fruit tree - Apricot,Frutal - Albaricoque,Damasqueiro
+perennial,Fruit tree - Avocado,Frutal - Aguacate,Abacateiro
+perennial,Fruit tree - Clementine,Frutal - Clementina,Clementina
+perennial,Fruit tree - Date palm,Frutal - Palmera datilera,Tamareira
+perennial,Fruit tree - Fig,Frutal - Higo,Figueira
+perennial,Fruit tree - Lemon,Frutal - Limón,Limoeiro
+perennial,Fruit tree - Mandarin,Frutal - Mandarina,Tangerineira
+perennial,Fruit tree - Mango,Frutal - Mango,Mangueira
+perennial,Fruit tree - Olive,Frutal - Oliva,Oliveira
+perennial,Fruit tree - Orange,Frutal - Naranja,Laranjeira
+perennial,Fruit tree - Peach,Frutal - Melocotón,Pessegueiro
+perennial,Fruit tree - Pear,Frutal - Pera,Pera
+perennial,Fruit tree - Pomegranate,Frutal - Granada,Romãzeira
+perennial,Fruit tree - Pomelo,Frutal - Pomelo,Pomeleiro
+perennial,Fruit tree - Other,Frutal - Otros,Árvore de fruta - Outra
+perennial,Nut tree - Almond,Árbol de frutos secos - Almendra,Amendoeira
+perennial,Nut tree - Chestnut,Árbol de frutos secos - Castaño / Marrón,Castanheiro
+perennial,Nut tree - Hazelnut,Árbol de frutos secos - Avellano,Avelã
+perennial,Nut tree - Pistachio,Árbol de frutos secos - Pistacho,Pistácio
+perennial,Nut tree - Walnut,Árbol de frutos secos - Nuez,Nogueira
+perennial,Nut tree - Other,Árbol de frutos secos - Otros,Frutos secos - Outros
+perennial,Tree - Ash,Árbol - Fresno,Árvore - Freixo
+perennial,Tree - Eucalyptus,Árbol - Eucalipto,Árvore - Eucalipto
+perennial,Tree - Carob,Árbol - Algarrobo,Árvore - Alfarrobeira
+perennial,Tree - Cork oak,Árbol - Alcornoque,Árvore - Sobreiro
+perennial,Tree - Cypress,Árbol - Ciprés,Árvore - Cipreste
+perennial,Tree - Holm oak,Árbol - Encina,Árvore - Azinheira
+perennial,Tree - Maple/Sycamore,Árbol - Arce / Plátano,Árvore - Bordo / Plátano
+perennial,Tree - Pine,Árbol - Pino,Árvore - Pinheiro
+perennial,Tree - Other,Árbol - Otros,Árvore - Outras
+perennial,Vine - Grape vines,Vid - Viñas,Videira - Videiras
+perennial,Vine - Other,Vid - Otros,Videira - Outras
+perennial,Other perennial crop,Otro cultivo perenne,Outra cultura perene
+annual,Aromatics,Aromáticas,Aromáticas
+annual,Cover crop - Single or multiple grasses,Cultivo de cobertura - Hierbas simples o múltiples,Culturas de cobertura - gramíneas simples ou múltiplas
+annual,Cover crop - Single or multiple legumes,Cultivo de cobertura - Leguminosas simples o múltiples,Cultura de cobertura - leguminosas simples ou múltiplas
+annual,Cover crop - Mix of grass and legumes,Cultivo de cobertura - Mezcla de gramíneas y leguminosas,Cultura de cobertura - Mistura de gramíneas e leguminosas
+annual,Cover crop - Multi-species cover crop,Cultivo de cobertura - Cultivo de cobertura multiespecie,Cultura de cobertura - Cultura de cobertura multi-espécies
+annual,Cover crop - Other,Cultivo de cobertura - Otros,Cultura de cobertura - Outra
+annual,Forage - Grass-Clover Mixtures,Forraje - Mezcla de gramíneas y trébol,Forragem - Misturas de gramíneas e trevos
+annual,Forage - Italian Ryegrass,Forraje - Ballico italiano,Forragem - Azevém italiano
+annual,Forage - N-fixing forages,Forraje - Forrajes fijadores de N,Forragem - Forragens fixadoras de N
+annual,Forage - Non-N-fixing forages,Forraje - Forrajes no fijadores de N,Forragem - Forragens não fixadoras de N
+annual,Forage - Non-legume hay,Forraje - Heno no leguminoso,Forragem - Feno não leguminoso
+annual,Forage - Sudangrass,Forraje - Pasto sudán,Forragem - Erva-do-sudão
+annual,Forage - Other,Forraje - Otros,Forragem - Outras
+annual,Grains/Cereals - Barley,Granos/Cereales - Cebada,Grãos/Cereais - Cevada
+annual,Grains/Cereals - Maize,Granos/Cereales - Maíz,Grãos/cereais - Milho
+annual,Grains/Cereals - Millet,Granos/Cereales - Mijo,Grãos/cereais - Milho painço
+annual,Grains/Cereals - Oats,Granos/Cereales - Avena,Grãos/Cereais - Aveia
+annual,Grains/Cereals - Rice,Granos/Cereales - Arroz,Grãos/Cereais - Arroz
+annual,Grains/Cereals - Rye,Granos/Cereales - Centeno,Grãos/Cereais - Centeio
+annual,Grains/Cereals - Sorghum,Granos/Cereales - Sorgo,Grãos/Cereais - Sorgo
+annual,Grains/Cereals - Spring Wheat,Granos/Cereales - Trigo de primavera,Grãos/Cereais - Trigo de primavera
+annual,Grains/Cereals - Triticale,Granos/Cereales - Triticale,Grãos/Cereais - Triticale
+annual,Grains/Cereals - Wheat,Granos/Cereales - Trigo,Grãos/Cereais - Trigo
+annual,Grains/Cereals - Winter Wheat,Granos/Cereales - Trigo de invierno,Grãos/Cereais - Trigo de inverno
+annual,Grains/Cereals - Other,Granos/Cereales - Otros,Grãos/cereais - Outros
+annual,Legumes - Alfalfa,Leguminosas - Alfalfa,Leguminosas - Alfafa
+annual,Legumes - Beans,Leguminosas - Judías,Leguminosas - Feijão
+annual,Legumes - Cowpea,Leguminosas - Caupí,Leguminosas - Feijão-frade
+annual,Legumes - Lupins,Leguminosas - Altramuces,Leguminosas - Tremoços
+annual,Legumes - Peas,Leguminosas - Guisantes,Leguminosas - Ervilhas
+annual,Legumes - Soybeans,Leguminosas - Soja,Leguminosas - Soja
+annual,Legumes - Vetch,Leguminosas - Arveja,Leguminosas - Ervilhaca
+annual,Legumes - Other,Leguminosas - Otras,Leguminosas - Outras
+annual,Roots/Tubers - Potatoes,Raíces/Tubérculos - Patatas,Raízes/Tubérculos - Batatas
+annual,Roots/Tubers - Beets,Raíces/Tubérculos - Remolacha,Raízes/Tubérculos - Beterrabas
+annual,Roots/Tubers - Other,Raíces/Tubérculos - Otros,Raízes/Tubérculos - Outros
+annual,Fruits and Vegetables - Squash,Frutas y verduras - Calabaza,Frutas e produtos hortícolas - Abóbora
+annual,Fruits and Vegetables - Other fruit,Frutas y verduras - Otras frutas,Frutas e produtos hortícolas - Outros frutos
+annual,Fruits and Vegetables - Other vegetable,Frutas y hortalizas - Otras hortalizas,Frutas e produtos hortícolas - Outros produtos hortícolas
+annual,Oilseeds - Peanuts,Semillas oleaginosas - Cacahuetes,Sementes oleaginosas - Amendoim
+annual,Oilseeds - Rapeseed,Semillas oleaginosas - Colza,Sementes oleaginosas - Colza
+annual,Oilseeds - Sunflower,Semillas oleaginosas - Girasol,Sementes oleaginosas - Girassol
+annual,Oilseeds - Other,Semillas oleaginosas - Otras,Sementes oleaginosas - Outras
+annual,Other annual crop,Otros cultivos anuales,Outras culturas anuais
+landuse,pasture,pastos,pastagem
+landuse,fallow,barbecho,pousio
+landuse,bare soil,suelo desnudo,solo nu
+perennial,Bushes/Shrubs - Lentisk/Mastic,arbustos - lentisco/masilla,arbustos - lentisco/mastique
