@@ -1,65 +1,46 @@
-carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
+carbonplus_main <- function(settings, local_run_farmId){
   
   ####################################################################
   # This script has the following functions:
   # - prepare log files
   # - set general model settings
-  # - get farm data from mongoDB
-  # - get farm environmental zone
+  # - get farm data
   # - read in factors
   # - process input data
   # - call the soil model and emissions calculations
-  # - upload resulting co2eq to mongoDB
-  ####################################################################
-  # Settings should be a list with:
-  # n_runs: Integer. The number of runs for getting uncertainties. Using 100 for production runs.
-  # sd_field_carbon_in: Positive decimal. standard error of the carbon inputs. Using 0.1 as default.
-  # debug_mode: Skips fetching some data and uses local climate and soil data. Writes out more data. Removes added error.
-  # save2mongoDB: Set to TRUE for production runs to save to database
-  # # To copy the practice of a single year to all others
-  # server: Server to use. One of: "prod", dev", "test"
-  # bareground: How baseline bare ground values should be determined: "envzone": uses a regional common practice, "reported": uses the reported current practice (year0) or "none": bare ground always FALSE
+  # - write out results
   ####################################################################
 
-  
   ## Loading libraries ---------------------------------------------------------
   
   library(pacman)
   p_load('pacman', 'SoilR', 'mongolite', 'tidyverse',
-          'aws.s3', 'log4r', 'jsonlite',
+         'aws.s3', 'log4r', 'jsonlite',
          'httr', 'logger', 'ncdf4', 'ncdf4.helpers',
          'openxlsx2', 'cowplot',
          'here', 'tidyverse')
-  #'soilassessment',
   
   
-  ## Prepare log files ---------------------------------------------------------
+  ## Prepare log and output paths ----------------------------------------------
+
+  output_name <- local_run_farmId
+    
   # clear and prepare log and output directory
   if(!dir.exists('logs')) {dir.create('logs')}
   if(!dir.exists('output')) {dir.create('output')}
   # unlink(file.path("logs", "*"), recursive = TRUE)
   # unlink(file.path("output", "*"), recursive = TRUE)  # Tim turning this off to keep the output files
   
-  my_logfile = file.path('logs', paste('out_', db_farmId, "_", str_replace_all(Sys.time(), c(" "="__", ":"="_")),'.log',sep=""))
+  my_logfile = file.path('logs', paste('out_', output_name, "_", str_replace_all(Sys.time(), c(" "="__", ":"="_")),'.log',sep=""))
   my_console_appender = console_appender(layout = default_log_layout())
   my_file_appender = file_appender(my_logfile, append = TRUE, 
                                    layout = default_log_layout())
   my_logger <- log4r::logger(threshold = "INFO", 
                              appenders= list(my_console_appender,my_file_appender))
   
-  ## Checking model settings -------------------------------------------------------
+  log4r::info(my_logger, paste0("farmId = ", output_name))
   
-  if(settings$debug_mode & settings$save2mongoDB) {stop("Must set debug_mode to FALSE when setting save2mongoDB to TRUE.")}
-  
-  ## Fetching Data -----------------------------------------------------------
-  
-  init_data <- fromJSON(init_file)
-  # Set environmental variables for AWS 
-  Sys.setenv(
-    "AWS_ACCESS_KEY_ID" = init_data$AWS_ACCESS_KEY_ID,
-    "AWS_SECRET_ACCESS_KEY" = init_data$AWS_SECRET_ACCESS_KEY,
-    "AWS_DEFAULT_REGION" = init_data$AWS_DEFAULT_REGION
-  )
+  ## Source files  -------------------------------------------------------------
   
   source(file.path("soil","run_soil_model.R"), local = TRUE)
   source(file.path("get_emissions.R"), local = TRUE)
@@ -67,105 +48,19 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   source(file.path("get_leakage.R"), local = TRUE)
   source(file.path("utility_functions.R"), local = TRUE)
   source(file.path("get_tree_carbon.R"), local = TRUE)
-  # source(file.path("test_functions.R"), local = TRUE) # Delete?
   
-  ## Get the farm data from the JSON file or MongoDB ---------------------------
 
-  # Check that only one source of farm data was provided
-  if(!is.na(db_farmId) & !is.na(JSONfile)){
-    stop("Both farmId AND JSON files were passed to the model. Please choose only one.")
-  }
-
-  if(is.na(db_farmId) & is.na(JSONfile)){
-    stop("Both farmId AND JSON files are missing. One must be passed.")
-  }
-
-  if(settings$server == "prod") {
-    connection_string = init_data$prod$connection_string
-    db <- init_data$prod$db
-    collection <- init_data$prod$collection
-  } else if(settings$server == "dev") {
-    connection_string = init_data$dev$connection_string
-    db <- init_data$dev$db
-    collection <- init_data$dev$collection
-  } else if(settings$server == "test") {
-    connection_string = init_data$test$connection_string
-    db <- init_data$test$db
-    collection <- init_data$test$collection
-  } else if(settings$server == "test_DBv2_audit2023") {
-    connection_string = init_data$test_DBv2_audit2023$connection_string
-    db <- init_data$test_DBv2_audit2023$db
-    collection <- init_data$test_DBv2_audit2023$collection
-  } else {stop("Wrong value for variable: server")
-  }
+  # Read inputs from local directory -------------------------------------------
   
-  if(!is.na(JSONfile)){
-    stop("JSON file reading not implemented yet. Format doesn't match the mongolite one.")
-    # monitoringData <- fromJSON(JSONfile, simplifyVector = FALSE)[[1]] # Format not matching mongolite
-  } else {
-    # pull the monitoring data
-    # use "iterate" instead of "find" as it can return the same format as jsonlite::fromJSON (though it will be a bit slower)
-    farm_collection <- mongo(collection=collection, db=db, url=connection_string)
-    monitoringData <- fromJSON(farm_collection$iterate(paste0('{"farmId":"',db_farmId,'"}'))$json())  # convert to json and back to list
-    ## Testing different ways to fetch json data
-    # monitoringData2 <- farm_collection$iterate(paste0('{"farmId":"',db_farmId,'"}'))  # convert to json and back to list
-    # monitoringData3 <- farm_collection$find(paste0('{"farmId":"',db_farmId,'"}'))  # convert to json and back to list
-    # monitoringData4 <- fromJSON(here("../test_files/troya_monitoring_2024-06-10.json"), simplifyVector = TRUE, simplifyDataFrame = FALSE)[[1]]
-    # monitoringData5 <- fromJSON(here("../test_files/troya_monitoring_2024-06-10.json"))
-  }
-  
-  # Email and farm ID
-  email <- monitoringData$email
-  db_farmId <- monitoringData$farmId
-  
-  log4r::info(my_logger, paste0("farmId (monitoringdatas) = ", db_farmId, ", email = ", email))
-  
-  
-  ## Retrieve farmInfo and add to the monitoringData object
-  farmInfo_collection <- mongo(collection=init_data$prod$collection_farms, db=init_data$prod$db, url=init_data$prod$connection_string)
-  farmInfo <- farmInfo_collection$iterate(query = paste0('{"_id":{"$oid":"', db_farmId, '"}}'))
-  
-  if(length(farmInfo$json()) > 0){
-    farmInfo <- fromJSON(farmInfo_collection$iterate(query = paste0('{"_id":{"$oid":"', db_farmId, '"}}'))$json())
-    monitoringData$farmInfo <- farmInfo$farmInfo
-  } else if (settings$output_xlsx) {
-    log4r::error(my_logger, paste0("ERROR: farmId (monitoringdatas) = ", db_farmId, " not found in farmInfo collection."))
-  } else {
-    log4r::error(my_logger, paste0("ERROR: farmId (monitoringdatas) = ", db_farmId, " not found in farmInfo collection."))
-    return()
-  }
-  
-  ## Fetching pedo-climatic zone
-  farm_pars_collection <- mongo(collection=init_data$prod$collection_farmparameters, db=init_data$prod$db, url=init_data$prod$connection_string)
-  pars_farmId <- monitoringData$farmInfo$farmId
-  farm_parameters <-  farm_pars_collection$find(paste0('{"farmId":"', pars_farmId,'"}'))
-  
-  # Check if missing. Delete?
-  if (nrow(farm_parameters) > 0){
-    farm_EnZ <- farm_parameters$enz
-    
-  } else {
-    log4r::error(my_logger, paste0("ERROR: farmparameters collection doesn't contain info on EnZ for farmId (monitoringdatas): ", db_farmId, "."))
-    farm_EnZ <- "Mediterranean north"
-  }
-  if (!(farm_EnZ %in% c('Mediterranean north', 'Mediterranean south'))) {
-    log4r::error(my_logger, paste0("ERROR: farmId (monitoringdatas) = ", db_farmId, " has an unknown EnZ: ", farm_EnZ, '. Stopping.'))
-    return()
-  }
-  
-  ## Fetching NPP data
-  npp_collection <- mongo(collection=init_data$prod$collection_parcel_remote_sensing, db=init_data$prod$db, url=init_data$prod$connection_string)
-  npp_object <- npp_collection$iterate(paste0('{"farmId":"',db_farmId,'"}'))
-  
-  if(length(npp_object$json()) > 0){
-    npp_data <- fromJSON(npp_collection$iterate(paste0('{"farmId":"',db_farmId,'"}'))$json())
-  } else if (settings$output_xlsx){
-    log4r::error(my_logger, paste0("ERROR: farmId (monitoringdatas) = ", db_farmId, " not found in NPP collection."))
-    return()
-  } else {
-    log4r::warn(my_logger, paste0("WARNING: farmId (monitoringdatas) = ", db_farmId, " not found in NPP collection."))
-    return()
-  }
+  inputs_path <- file.path(settings$local_inputs_path, local_run_farmId)
+  farm_EnZ <- read_csv(file.path(inputs_path,"env_zone.csv")) %>% pull(env_zone)
+  npp_data <- read_csv(file.path(inputs_path,"npp.csv"))
+  farmInfo <- fromJSON(read_json(file.path(inputs_path,"farmInfo.json"), simplifyVector = TRUE))
+  # Use the line below if the json file comes from saving after a model run (settings$write_out_inputs)
+  monitoringData <- read_json(file.path(inputs_path,"monitoringData.json"), simplifyVector = TRUE)
+  # Use the two lines below if the json file was exported from mongoDB
+  # monitoringData <- as.list(fromJSON(file.path(inputs_path,"monitoringData.json")))
+  # monitoringData$yearlyFarmData <- monitoringData$yearlyFarmData[[1]]
   
   
   ## Extracting and Processing Inputs -----------------------------------------
@@ -194,10 +89,9 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   factors$factors_others <- read_csv(file.path("data", "factors_others.csv"), show_col_types = FALSE)
   factors$factors_organicmatter <- read_csv(file.path("data", "factors_organicmatter.csv"), show_col_types = FALSE)
   factors$factors_uncertainties <- read_csv(file.path("data", "factors_uncertainties.csv"), show_col_types = FALSE)
-  # read in grouped parcel info
-  grouped_parcels <- read.csv("../sensitive-data/farm_parcel_grouping.csv", fileEncoding="UTF-8")
   print("Finished reading factors.")
   
+
   ## Farm data extraction -----------------------------------------------------
   ## Define start index of yearly data
   years <- monitoringData$yearlyFarmData$year
@@ -205,15 +99,11 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   # Check if start_index is 2018 if not, raise warning, because I'm not sure what will happen then
   # Check if baseline data is missing
   start_bl <- as_tibble(monitoringData$yearlyFarmData$parcelLevelData[[start_index]]$parcelFixedValues)
-  if (nrow(start_bl) == 0){
-    log4r::error(my_logger, paste0("---> ERROR: First year of baseline data is missing for farmId (monitoringdatas) and email: ", db_farmId, " | ", email, ". \n Potential thread that all baseline data is missing."))
-    return()
-  }
   
   inputs_raw <- list()
   ## Fixed farm and parcel inputs
   inputs_raw$inputs_parcel_fixed <- get_fixed_parcel_inputs(monitoringData, start_index)
-  inputs_raw$inputs_farm_fixed <- get_fixed_farm_inputs(monitoringData, inputs_raw$inputs_parcel_fixed)
+  inputs_raw$inputs_farm_fixed <- get_fixed_farm_inputs(monitoringData, farmInfo, inputs_raw$inputs_parcel_fixed)
   
   ## Yearly farm inputs
   
@@ -264,20 +154,18 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   
   # Pasture
   inputs_raw$inputs_pasture <- get_pasture_inputs(monitoringData, start_index)
-  
+
   # NPP
   inputs_raw$inputs_npp <- get_npp_inputs(npp_data)
   
-  # For farmers with grouped parcels: delete the ones with no data
-  inputs_raw <- delete_grouped_parcels(inputs_raw, db_farmId, grouped_parcels)
   
   ## Outputs raw data in xlsx format and returns
   # this is only for extracting raw data
   if (settings$output_xlsx_inputs_raw) {
     save_dir_xlsx <- 'output/xlsx_raw_inputs'
-    ifelse (!dir.exists(save_dir_xlsx), dir.create(save_dir_xlsx, recursive = TRUE), unlink(paste0(save_dir_xlsx,"/", email, ".xlsx"))) 
+    ifelse (!dir.exists(save_dir_xlsx), dir.create(save_dir_xlsx, recursive = TRUE), unlink(paste0(save_dir_xlsx,"/", output_name, ".xlsx"))) 
     inputs_temp <- clean_raw_inputs(inputs_raw)
-    write_list_to_xlsx(inputs_temp, path = save_dir_xlsx, prefix = email)
+    write_list_to_xlsx(inputs_temp, path = save_dir_xlsx, prefix = output_name)
     return()
   }
   
@@ -348,7 +236,7 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     inputs_processed$inputs_perennials,
     periods
     )
-  
+
   inputs_processed$inputs_livestock <- process_livestock_inputs(
     inputs_processed$inputs_livestock_category,
     inputs_processed$inputs_livestock_outfarm,
@@ -370,13 +258,16 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     inputs_processed$inputs_organicmatter,
     inputs_processed$inputs_landuse,
     inputs_processed$inputs_npp,
-    factors$factors_others
+    factors$factors_others,
+    settings
     )
   
   inputs_processed$inputs_grazing_cover <- inputs_grazing[[1]]
   inputs_processed$inputs_grazing_parcels <- inputs_grazing[[2]] 
   inputs_processed$inputs_fodder <- inputs_grazing[[3]]
-  grazing_error_messages <- inputs_grazing[[4]]
+  inputs_processed$forage_potential_total_yearly <- inputs_grazing[[4]]
+  grazing_error_messages <- inputs_grazing[[5]]
+  inputs_processed$inputs_landuse <- inputs_grazing[[6]] # has column "extra_forage" for supplementary forage added in baseline years
   
   inputs_processed$inputs_productivity <- process_productivity_inputs(
     inputs_processed$inputs_landuse,
@@ -418,29 +309,10 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   if(settings$output_sense_checks) {
     save_dir_errors <- 'output/data_check/errors'
     if (!dir.exists(save_dir_errors)) {dir.create(save_dir_errors)}
-    sense_checks <- check_all_inputs(inputs_raw, inputs_processed, grazing_error_messages, save_dir_errors, email)
+    sense_checks <- check_all_inputs(inputs_raw, inputs_processed, grazing_error_messages, save_dir_errors, output_name)
     # return()
   }
-  
-  if (settings$output_landuse_plots) {
-    save_dir <- paste0('output/data_check/individual_farmer/', email, '/landuse_plots/')
-    if (!dir.exists(save_dir)) {dir.create(save_dir, recursive = TRUE)}
-    save_dir_prod <- paste0('output/data_check/landuse/productivity_tables/')
-    if (!dir.exists(save_dir_prod)) {dir.create(save_dir_prod, recursive = TRUE)}
-    save_dir_prod2 <- paste0('output/data_check/landuse/productivity_tables_refined/')
-    if (!dir.exists(save_dir_prod2)) {dir.create(save_dir_prod2, recursive = TRUE)}
-    save_dir_comb_plot <- 'output/data_check/landuse/00_combined_plots/'
-    if (!dir.exists(save_dir_comb_plot)) {dir.create(save_dir_comb_plot, recursive = TRUE)}
-    # write out the productivity data for remote sensing
-    # need to do this BEFORE the dynamic baseline adjustment (as this deletes the dates and extends this dataframe)
-    write_simple_productivity(inputs_processed$inputs_productivity, # inputs_processed$inputs_perennialcrops, 
-                              inputs_processed$inputs_landuse, 
-                              save_dir_prod, save_dir_prod2, db_farmId)
-    # plot the landuse timeline
-    plot_landuse_timeline(inputs_processed$inputs_landuse, inputs_processed$inputs_perennialcrops,
-                          inputs_processed$inputs_parcel_fixed, save_dir, save_dir_comb_plot, email)
-    # return()  # 26 june: turning this on just for now to examine the sense checks with different farms
-  }
+
 
   ## Dynamic baseline adjustment ------------------------------------------------
   project_years <- seq(as.numeric(inputs_raw$inputs_farm_fixed$project_start_year), max(years))
@@ -452,32 +324,12 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   )
   
   
-  # if(settings$debug_mode) {
-  #   # set up directories for saving
-  #   save_dir <- paste0('output/data_debug/', email)
-  #   ifelse (!dir.exists(save_dir), dir.create(save_dir, recursive = TRUE), unlink(paste0(save_dir,"/*")))
-  #   # save the inputs objects
-  #   inputs_raw <- clean_raw_inputs(inputs_raw)
-  #   write_list_to_csvs(inputs_raw, path = save_dir, prefix = "raw_")
-  #   write_list_to_csvs(inputs_processed, path = save_dir, prefix = "processed_")
-  #   
-  #   save_dir_xlsx <- 'output/data_debug/xlsx'
-  #   ifelse (!dir.exists(save_dir_xlsx), dir.create(save_dir_xlsx), unlink(paste0(save_dir_xlsx,"/*")))
-  #   write_list_to_xlsx(inputs_raw, path = save_dir_xlsx, prefix = paste0(email, "_raw"))
-  #   write_list_to_xlsx(inputs_processed, path = save_dir_xlsx, prefix = paste0(email, "_processed"))
-  # }
+  ## Get climate and soil data -------------------------------------------------
   
-  if(settings$output_xlsx_for_excel_model) {
-    # also write the non-cleaned versions
-    inputs_excel <- clean_raw_inputs_for_excel_model(inputs_raw, factors$factors_perennials_trees, inputs_processed$inputs_grazing_cover, inputs_processed$inputs_grazing_parcels)
-    save_dir_xlsx <- 'output/excel_model/xlsx_inputs/'
-    if (!dir.exists(save_dir_xlsx)) {dir.create(save_dir_xlsx)}
-    write_list_to_xlsx(inputs_excel, path = save_dir_xlsx, prefix = email, sideways=TRUE)
-    return()
-  }
+  climate_data <- read_csv(file.path(inputs_path,"climate.csv"))
+  soilMapsData <- read_csv(file.path(inputs_path,"soil.csv"))
 
-      
-  ## Running the tree biomass, soil model and emissions calculations -------------------------
+  ## Running the tree biomass, soil model and emissions calculations -----------
 
   # tree biomass
   if(settings$calc_tree_emissions) {
@@ -485,7 +337,7 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
       inputs_processed$inputs_perennials, 
       periods, inputs_processed$inputs_parcel_fixed,
       inputs_processed$inputs_trees_felled,
-      email)
+      output_name)
     inputs_processed$tree_biomass <- tree_carbon_results$tree_biomass
     inputs_processed$tree_soil_inputs <- tree_carbon_results$tree_soil_inputs
     tree_biomass_removals <- tree_carbon_results$tree_biomass %>%
@@ -511,15 +363,17 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   # leakage 
   leakage_results <- get_leakage(inputs_processed)
   leakage_annual <- leakage_results$leakage_annual
+  leakage_diffs <- leakage_results$leakage_diffs
   
   # soil model
-  soil_model_results <- run_soil_model(init_data=init_data,
-                                     monitoringData=monitoringData,
-                                     farm_EnZ=farm_EnZ,
-                                     inputs=inputs_processed,
-                                     factors=factors,
-                                     settings=settings,
-                                     periods=periods)
+  soil_model_results <- run_soil_model(monitoringData=monitoringData,
+                                       farm_EnZ=farm_EnZ,
+                                       inputs=inputs_processed,
+                                       factors=factors,
+                                       settings=settings,
+                                       periods=periods,
+                                       climate_data=climate_data,
+                                       soilMapsData=soilMapsData)
   
   soil_ERRs <- calculate_soil_ERRs(soil_model_results, inputs_processed)
   soil_results_monthly <- soil_ERRs$soc_monthly
@@ -528,16 +382,16 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   # join the emissions and soil results
   yearly_results$CO2eq_emissions <- emission_diffs_total$kgCO2_eq_diff / 1000 # convert to tonnes
   yearly_results <- left_join(yearly_results,
-                              leakage_annual %>% filter(year_index >= 0),
+                              leakage_diffs %>% select(year, year_index, CO2eq_leakage_diff),
                               by=c("year", "year_index")) 
-
+  
   # join the tree biomass results
   yearly_results <- left_join(yearly_results, 
                               tree_biomass_removals %>% select(year, CO2eq_removals_tonnes), 
                               by='year') %>%
     mutate(CO2eq_removals_tonnes = if_else(is.na(CO2eq_removals_tonnes), 0, CO2eq_removals_tonnes))
   yearly_results <- yearly_results %>%
-    mutate(CO2eq_t_total = CO2eq_soil_gain_95conf + CO2eq_removals_tonnes - CO2eq_emissions - CO2eq_leakage)
+    mutate(CO2eq_t_total = CO2eq_soil_gain_95conf + CO2eq_removals_tonnes - CO2eq_emissions - CO2eq_leakage_diff)
   # calculate total CO2eq per hectare
   yearly_results$area <- inputs_processed$inputs_farm_fixed$area_parcels
   yearly_results$CO2eq_t_per_ha <- yearly_results$CO2eq_t_total / yearly_results$area
@@ -546,7 +400,7 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   has_na <- data.frame(
     emissions = any(is.na(emissions_long)),
     parcel_Cinputs = any(is.na(soil_model_results$parcel_Cinputs)),
-    leakage = any(is.na(leakage_annual$CO2eq_leakage))
+    leakage = any(is.na(leakage_diffs$CO2eq_leakage_diff))
   )
   if (any(has_na)) {
     log4r::error(my_logger, paste0("NA values found in the following dataframes: ", 
@@ -554,42 +408,6 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   }
   
   readLines(my_logfile)
-  
-  ## Push results to mongoDB ---------------------------------------------------
-  
-  if(settings$save2mongoDB) {
-    # create an object to store all the data
-    results <- list()
-    results$farmId <- db_farmId
-    results$email <- email
-    results$farmInfo <- monitoringData$farmInfo
-    
-    # Get code version and time info
-    results$modelInfo <- list(
-      modelVersion = paste0("R-model-version: ", 
-                            system2(command = "git", args = "describe", stdout = TRUE)),
-      resultsGenerationYear = format(Sys.time(), "%Y"),
-      resultsGenerationTime = format(Sys.time(), "%Y-%m-%d %H:%M")
-    )
-    
-    results$modelResults <- as.list(yearly_results %>% 
-                                      select(year, CO2eq_t_total, CO2eq_soil_gain_95conf, CO2eq_emissions, CO2eq_leakage))
-    results$emissionsDetailed <- as.list(emission_diffs_by_source)
-    
-    results$modelSettings <- settings
-    
-    results$has_na <- as.list(has_na)
-    
-    # convert to json
-    results_json <- jsonlite::toJSON(results, pretty=T, auto_unbox=T)
-    
-    # Upload to database
-    # note: if a result already exists for  this farmer, this will result in a new entry
-    # (i.e. it does not overwrite any existing results)
-    carbonresults_collection = mongo(collection="carbonresults", db=db, url=connection_string)
-    carbonresults_collection$insert(results_json)
-    
-  }
 
   ## Log Messages --------------------------------------------------------------
   
@@ -604,8 +422,8 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   )
   
   ## Write data to files -----------------------------------------------------
-
-  save_dir <- paste0('output/model_results/', email, '/')
+  
+  save_dir <- file.path('output','model_results', output_name)
   
   # Inputs
   inputs_to_write <- inputs_processed
@@ -613,8 +431,8 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   inputs_to_write$climate_inputs <- soil_model_results$present_climate
   inputs_to_write$soil_data <- as.data.frame(soil_model_results$soil_data)
   inputs_to_write$env_zone <- data.frame('env_zone'=farm_EnZ, 'soil_model_version'=soil_model_results$model_version)
-  write_list_to_csvs(inputs_to_write, path = paste0(save_dir, 'inputs/'), prefix = "", simplify_names=T)
-  write_list_to_csvs(inputs_raw, path = paste0(save_dir, 'inputs_raw/'), prefix = "", simplify_names=T)
+  write_list_to_csvs(inputs_to_write, path = file.path(save_dir, 'inputs'), prefix = "", simplify_names=T)
+  write_list_to_csvs(inputs_raw, path = file.path(save_dir, 'inputs_raw'), prefix = "", simplify_names=T)
   
   # Outputs
   outputs_to_write <- list(
@@ -637,13 +455,25 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     # checks
     has_na = has_na
   )
-  write_list_to_csvs(outputs_to_write, path = paste0(save_dir, 'outputs/'), prefix = "", simplify_names=F)
+  write_list_to_csvs(outputs_to_write, path = file.path(save_dir, 'outputs'), prefix = "", simplify_names=F)
+
+  # Write out input files
+  if(settings$write_out_inputs) {
+    path <- file.path(save_dir, "input_files")
+    if (!dir.exists(here(path))) dir.create(here(path), recursive = TRUE)
+    write_csv(climate_data, file.path(path, "climate.csv"))
+    write_csv(soilMapsData, file.path(path, "soil.csv"))
+    write_csv(tibble(env_zone=farm_EnZ), file.path(path, "env_zone.csv"))
+    write_csv(inputs_raw$inputs_npp, file.path(path, "npp.csv"))
+    write_json(farmInfo, file.path(path, "farmInfo.json"))
+    write_json(monitoringData, file.path(path, "monitoringData.json"), na="null")
+  }
   
   ## Plotting ------------------------------------------------------------------
-  plot_dir <- paste0(save_dir, 'plots/')
+  plot_dir <- file.path(save_dir, 'plots')
   if (!dir.exists(plot_dir)) {dir.create(plot_dir, recursive = TRUE)}
   
-  name <- paste0("Results: ", email)
+  name <- paste0("Results: ", output_name)
   
   soil_results_monthly <- soil_results_monthly %>% 
     mutate(time = paste0(cal_year,'-',month), time = ym(time))
@@ -656,13 +486,13 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     ylab("SOC (tonnes per hectare)") +
     theme_bw()
   # print(graph)
-  ggsave(graph, file = paste0(plot_dir, 'SOC_timeseries.png'), width=8, height=4, dpi=100)
+  ggsave(graph, file = file.path(plot_dir, 'SOC_timeseries.png'), width=8, height=4, dpi=100)
   
   barplot1 <- ggplot(yearly_results %>% select(-c(area, CO2eq_t_per_ha, soil_has_na)), aes(x=year, group = 1)) +
     geom_hline(yintercept=0, color='black', linewidth=0.3) +
     geom_bar(aes(y=CO2eq_soil_gain_mean), stat="identity", fill="brown", alpha=0.7) +
     geom_bar(aes(y=CO2eq_t_total), stat="identity", fill="green", alpha=0.7) +
-    geom_bar(aes(y=CO2eq_leakage), stat="identity", fill="red", alpha=0.7) +
+    geom_bar(aes(y=CO2eq_leakage_diff), stat="identity", fill="red", alpha=0.7) +
     geom_bar(aes(y=CO2eq_emissions), stat="identity", fill="blue", alpha=0.7) +
     geom_errorbar(aes(ymin = CO2eq_soil_gain_mean-1.96*CO2eq_soil_gain_sd,
                       ymax = CO2eq_soil_gain_mean+1.96*CO2eq_soil_gain_sd, color = "95% CI"), colour="black", width=.5, show.legend = T) +
@@ -670,17 +500,17 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     ylab("Number of credits issuable (per year)") +
     theme_bw()
   # print(barplot1)
-  # ggsave(barplot1, file = paste0(plot_dir, 'barplot1.png'), width=6, height=4, dpi=100)
+  # ggsave(barplot1, file = file.path(plot_dir, 'barplot1.png'), width=6, height=4, dpi=100)
   
   barplot_data <- yearly_results %>% 
     select(-c(area, CO2eq_t_per_ha, soil_has_na)) %>% 
     mutate(
       CO2eq_emissions_red = -CO2eq_emissions, # -ve value is emission reduction --> +ve value is emission reduction
-      CO2eq_leakage = -CO2eq_leakage, # +ve value is leakage --> -ve value is leakage
+      CO2eq_leakage_diff = -CO2eq_leakage_diff, # +ve value is leakage --> -ve value is leakage
     ) %>%
     filter(year_index>0) %>%
     select(-c(CO2eq_soil_cum, CO2eq_soil_gain_mean, CO2eq_soil_gain_sd, CO2eq_emissions)) %>%
-    pivot_longer(!c(year, year_index, period)) %>%
+    pivot_longer(!c(year, year_index)) %>%
     mutate(name_short = str_replace(name, "CO2eq_", ""))
   barplot2 <- ggplot(barplot_data %>% filter(!is.na(value))) + 
     geom_hline(yintercept=0, color='black', linewidth=0.3) +
@@ -689,20 +519,20 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     labs(x="", y="CO2eq (tonnes)", title="Annual CO2eq emissions and removals") +
     scale_fill_brewer(palette = "Set1")
   # print(barplot2)
-  ggsave(barplot2, file = paste0(plot_dir, 'barplot2.png'), width=8, height=4, dpi=100)
+  ggsave(barplot2, file = file.path(plot_dir, 'barplot2.png'), width=8, height=4, dpi=100)
   
   # plot parcel C inputs by type over time
-  soil_input_types <- c("organic_amendments","trees","livestock","crops_and_pasture")
   Cinp_long <- soil_model_results$parcel_Cinputs %>%
     filter(scenario != "projected_baseline", scenario != "baseline_average") %>%
-    pivot_longer(cols = soil_input_types, names_to = "Cinput_type", values_to = "Cinput") %>%
+    pivot_longer(cols = c("organic_amendments","trees","livestock","crops_and_pasture"), 
+                 names_to = "Cinput_type", values_to = "Cinput") %>%
     group_by(year, period, year_index, Cinput_type) %>%
     summarise(tC = sum(Cinput, na.rm = T), 
               tC_ha = tC/sum(area),
               .groups='drop') # sum over all parcels
   all_scenario_tots <- soil_model_results$parcel_Cinputs %>% 
     group_by(scenario, year) %>% 
-    summarise(total=sum(total_tC)/sum(inputs_processed$inputs_parcel_fixed$area))
+    summarise(total=sum(total_tC)/sum(inputs_processed$inputs_parcel_fixed$area), .groups='keep')
   cinputs <- ggplot(Cinp_long %>% filter(!is.na(tC_ha)), aes(x=year, y=tC_ha, fill=Cinput_type)) +
     geom_vline(xintercept=as.numeric(monitoringData$projectStartYear)-0.5, linetype="dashed", color = "black") +
     geom_text(aes(x=as.numeric(monitoringData$projectStartYear)-0.4, y=0, label="Project"), vjust=1, hjust=0) +
@@ -714,7 +544,7 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     theme_bw() +
     scale_fill_brewer(palette = "Set1")
   # cinputs
-  ggsave(cinputs, file = paste0(plot_dir, 'Cinputs_over_time.png'), width=8, height=4, dpi=100)
+  ggsave(cinputs, file = file.path(plot_dir, 'Cinputs_over_time.png'), width=8, height=4, dpi=100)
   
   # ... same but including the dynamic baseline ...
   # Cinp_long2 <- soil_model_results$parcel_Cinputs %>%
@@ -732,12 +562,13 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
   #   theme_bw() +
   #   scale_fill_brewer(palette = "Set1")
   # cinputs2
-  # ggsave(cinputs2, file = paste0(plot_dir, 'Cinputs_over_time_with_projected_baseline.png'), width=8, height=4, dpi=100)
+  # ggsave(cinputs2, file = file.path(plot_dir, 'Cinputs_over_time_with_projected_baseline.png'), width=8, height=4, dpi=100)
   
   # C inputs per parcel
   parcelC <- soil_model_results$parcel_Cinputs %>%
     filter(scenario != "projected_baseline", scenario != "baseline_average") %>%
-    pivot_longer(cols = soil_input_types, names_to = "Cinput_type", values_to = "tC") %>%
+    pivot_longer(cols = c("organic_amendments","trees","livestock","crops_and_pasture"), 
+                 names_to = "Cinput_type", values_to = "tC") %>%
     mutate(tC_ha = tC/area)
   nparcels <- nrow(inputs_processed$inputs_parcel_fixed)
   parcelC_plot <- ggplot(parcelC %>% filter(!is.na(tC_ha)), aes(x=year, y=tC_ha, fill=Cinput_type)) + #, group=year, fill=year)) +
@@ -748,7 +579,7 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     theme_bw() +
     scale_fill_brewer(palette = "Set1")
   # parcelC_plot
-  ggsave(parcelC_plot, file = paste0(plot_dir, 'parcel_Cinputs_over_time.png'), width=12, height=2*nparcels/5, dpi=100)
+  ggsave(parcelC_plot, file = file.path(plot_dir, 'parcel_Cinputs_over_time.png'), width=12, height=2*nparcels/5, dpi=100)
   
   # different kinds of emissions
   emissions_clean <- emissions_long %>%
@@ -768,7 +599,7 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     scale_fill_brewer(palette = "Set1") + 
     labs(x="Year", y="CO2eq (kg)", title="Annual CO2eq emissions by source")
   # emission_plot
-  ggsave(emission_plot, file = paste0(plot_dir, 'emissions_by_source.png'), width=8, height=4, dpi=100)
+  ggsave(emission_plot, file = file.path(plot_dir, 'emissions_by_source.png'), width=8, height=4, dpi=100)
   
   # plot livestock per parcel per year
   ls <- inputs_processed$inputs_grazing_parcels
@@ -777,12 +608,12 @@ carbonplus_main <- function(init_file, settings, db_farmId=NA, JSONfile=NA){
     coord_flip() +
     theme_bw()
   # ls_parcels
-  ggsave(ls_parcels, file = paste0(plot_dir, 'livestock_per_parcel_per_year.png'), width=6, height=8, dpi=100)
+  ggsave(ls_parcels, file = file.path(plot_dir, 'livestock_per_parcel_per_year.png'), width=6, height=8, dpi=100)
   
   ## Move logs to output dir  ---------------------------------------------------------
   time_str <- format(Sys.time(), "%Y-%m-%d %H_%M")
   file.copy(from=my_logfile, 
-            to=paste0(save_dir, 'log ', time_str,'.txt'))
+            to=file.path(save_dir, paste0('log ', time_str,'.txt')))
   
   # browser()
   ## End function --------------------------------------------------------------

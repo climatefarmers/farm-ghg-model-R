@@ -108,8 +108,8 @@ get_emissions <- function(init_data, farm_EnZ, inputs, factors, periods){
   
   ## B: Now add the n_fixing_species, which have distinct values in the projected baseline
   emissions_all <- left_join(emissions, n_fixing_species_farmlevel, by = c('year', 'scenario')) %>%
-    replace_na(list(n2o_kg_n_fixing = 0))
-  
+    # replace all NA values with zero
+    mutate(across(where(is.numeric), ~replace(., is.na(.), 0)))
   
   ## Group by gas type and convert to CO2eq
   emissions_long <- emissions_all %>% 
@@ -119,7 +119,6 @@ get_emissions <- function(init_data, farm_EnZ, inputs, factors, periods){
     left_join(factors$factors_co2eq, by = 'gas') %>% 
     mutate(kgCO2_eq = value * co2eq_factor) %>% 
     select(-c(value, co2eq_factor))
-  
   
   ## Calculate differences between projected baseline and each project year
   # a) for each emission source
@@ -145,7 +144,7 @@ get_emissions <- function(init_data, farm_EnZ, inputs, factors, periods){
   
   ## return
   return(list(
-    emissions = emissions,
+    emissions = emissions_all,
     emissions_long = emissions_long,
     emission_diffs_by_source = emission_diffs_by_source,
     emission_diffs_by_gas = emission_diffs_by_gas,

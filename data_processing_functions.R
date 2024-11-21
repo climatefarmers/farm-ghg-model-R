@@ -12,19 +12,22 @@ process_livestock_inputs <- function(inputs_livestock_category,
   factors_methane <-  factors_methane %>% select(species, ef_methane_manure)
   
   inputs_livestock_category <- left_join(inputs_livestock_category, factors_livestock, by = c("species", "db_reference")) %>%
-    mutate(grazing_days = if_else(grazing_days > days_on_farm_per_year, days_on_farm_per_year, grazing_days),
+    mutate(grazing_days = if_else(grazing_days > max_yearly_grazing_days, max_yearly_grazing_days, grazing_days),
            origin = "infarm")
   
   factors_livestock_outfarm <- factors_livestock %>% filter(is_generic)
   inputs_livestock_outfarm <- left_join(inputs_livestock_outfarm, factors_livestock_outfarm, by = "species") %>%
-    mutate(grazing_days = if_else(grazing_days > days_on_farm_per_year, days_on_farm_per_year, grazing_days),
+    mutate(grazing_days = if_else(grazing_days > max_yearly_grazing_days, max_yearly_grazing_days, grazing_days),
            origin = "outfarm") %>%
-    mutate(days_on_farm_per_year = grazing_days)
+    mutate(
+      max_yearly_grazing_days = grazing_days,
+      days_on_farm_per_year = grazing_days
+      ) # these limits are set for outfarm animals only
   
   inputs_livestock <- bind_rows(inputs_livestock_category, inputs_livestock_outfarm) %>%
     left_join(factors_methane, by = "species") %>%
     select(year, year_index, period, origin, species, category, amount, grazing_days, mass_kg_per_animal, ef_enteric_fermentation_kg_head, n_excretion_rate_kg_1000am,     
-           c_kg_per_year_per_animal, vs_kg_per_tonne_per_day, days_on_farm_per_year, dmi_kg_per_kg_per_day, ef_methane_manure, max_head_per_farm)
+           c_kg_per_year_per_animal, vs_kg_per_tonne_per_day, days_on_farm_per_year, max_yearly_grazing_days, dmi_kg_per_kg_per_day, ef_methane_manure, max_head_per_farm)
 
   return(inputs_livestock)
 }
@@ -97,7 +100,7 @@ process_landuse_inputs <- function(
   
   inputs_perennials <- inputs_perennials %>% select(
     year, year_index, period, parcel_name, parcel_id, area, landuse,
-    start_date, end_date, tree_index, species, harvest_t_ha_dry, residue_t_ha_dry, harvest_t_dry, residue_t_dry,
+    start_date, end_date, cohort_id, species, harvest_t_ha_dry, residue_t_ha_dry, harvest_t_dry, residue_t_dry,
     dry_c, r_s_ratio, leaflitter_factor, bg_turnover
   ) %>% ungroup() %>%
     mutate(landuse=as.character(landuse))
@@ -183,12 +186,14 @@ process_grazing_inputs <- function(
     inputs_organicmatter,
     inputs_landuse,
     inputs_npp,
-    factors_others
+    factors_others,
+    settings
 ) {
   
   ## Function that:
   # 1. calculates the grazing per parcel and year based on livestock numbers
   # 2. calculates the fodder and forage grazed and grazing residues per parcel
+  # 3. adjusts the forage available to be at least 80% of the forage grazed
   
   # Definitions:
   # Fodder: hay and straw that was additionally applied to the parcel to feed livestock
@@ -284,7 +289,7 @@ process_grazing_inputs <- function(
     filter(was_grazed_parcel == TRUE, landuse %in% c("fallow", "annual crop", "pasture", "shrub")) %>%
     merge(months_grazed, by = c("year", "parcel_name")) %>%
     mutate(was_grazed_cover = if_else (grazing_date >= start_date & grazing_date <= end_date, TRUE, FALSE)) %>%
-    group_by(year, year_index, period, parcel_name, landuse, area, months_grazed, crop_index, tree_index, species, 
+    group_by(year, year_index, period, parcel_name, landuse, area, months_grazed, crop_index, cohort_id, species, 
              productivity_t_ha_dry, productivity_t_dry, harvest_t_dry, residue_t_dry, 
              frac_area, dry_c, r_s_ratio) %>%
     summarise(months_grazed_cover = sum(was_grazed_cover), .groups = "drop") %>%
@@ -355,7 +360,7 @@ process_grazing_inputs <- function(
     filter(landuse %in% c("fallow", "annual crop", "shrub")) %>%
     group_by(year, parcel_name) %>%
     summarise(nr_crops = n())
-
+  
   # Calculate expected total above-ground biomass production per crop/pasture
   # For pastures: total productivity entry for pastures, for crops: based on npp
   # Multiply by the area of the respective land use type (to account for several land use types in the same parcel)
@@ -366,7 +371,7 @@ process_grazing_inputs <- function(
     mutate(npp_ag_t_cover_dry = if_else(landuse == "pasture", 
                                         productivity_t_dry,
                                         npp_crop_tC_ha/avg_C_frac/(1 + r_s_ratio) * (area * frac_area)))
-
+  
   # Calculate the potential forage per crop/pasture
   inputs_grazing_cover_temp <- inputs_grazing_cover_temp %>%
     # filter crops with perc area = 0
@@ -397,21 +402,78 @@ process_grazing_inputs <- function(
     mutate(forage_pot_frac = forage_pot/sum(forage_pot)) %>%  # issue: what if forage_pot is 0 in a given year?
     ungroup()
 
-    # Check if total forage potential per year can cover the yearly forage required
+  # Check if the yearly forage potential is below the tolerance limit 
   forage_potential_total_yearly <- inputs_grazing_cover_temp %>%
-    group_by(year) %>%
+    group_by(year, year_index) %>%
     summarise(forage_pot_total = sum(forage_pot)) %>%
     ungroup() %>%
     left_join(select(forage_total_yearly, year, forage_yearly_t_dry), by = c("year")) %>%
-    mutate(forage_covered = if_else(forage_pot_total < forage_yearly_t_dry, FALSE, TRUE))
+    mutate(forage_limit = forage_yearly_t_dry * settings$forage_tolerance) %>%
+    mutate(forage_covered = if_else(forage_pot_total < forage_limit, FALSE, TRUE))
   
-  if(any(forage_potential_total_yearly$forage_covered == FALSE)) {
-    msg <- "orange || science || The total forage potential per year is not sufficient to cover the yearly forage required. || "
+  # add some more variables to this dataframe
+  forage_potential_total_yearly <- forage_potential_total_yearly %>%
+    left_join(fodder_yearly %>% select(year, grazing_yearly_t_dry, fodder_available_yearly_t_dry), by='year') %>%
+    mutate(animal_needs_with_droppings = grazing_yearly_t_dry / (1-forage_res_frac))  # total = eaten / (1-0.15)
+  pasture_prod_yearly <- inputs_landuse %>% filter(landuse=="pasture") %>% group_by(year) %>% summarise(pasture_prod = sum(productivity_t_dry))
+  forage_potential_total_yearly <- left_join(forage_potential_total_yearly, pasture_prod_yearly, by='year')
+  
+  # write error messages
+  not_covered <- forage_potential_total_yearly %>% filter(forage_covered == FALSE)
+  if(nrow(not_covered)>0) {
+    msg <- "orange || science || The total forage potential is significantly lower than the forage grazed. || "
+    msg2 <- paste0('\n Year: ', not_covered$year,
+                   ' | Forage potential: ', round(not_covered$forage_pot_total, 2),
+                   ' | Forage required: ', round(not_covered$forage_yearly_t_dry, 2))
     log4r::warn(my_logger, msg)
-    error_messages <- c(error_messages, msg)
+    log4r::info(my_logger, msg2)
+    error_messages <- c(error_messages, paste0(msg, paste0(msg2, collapse='')))
+  }
+  
+  # Adjust forage potential if the forage potential is significantly lower than the forage grazed ----
+  # Adjustment based on statistical analysis (see grazing-forage-analysis.pdf)
+  # If the amount of forage potential is lower than 80% of the forage grazed then
+  # the values are considered significantly different and the forage potential is 
+  # increased to 80% of the forage grazed.
+  # This is a conservative correction since it will generally increase the 
+  # productivity during the baseline more than in the project years.
+  
+  # save the original forage potential
+  inputs_grazing_cover_temp$forage_pot_raw <- inputs_grazing_cover_temp$forage_pot
+  
+  # calculate the modifier: the amount the productivity needs to be increased to cover the forage demand
+  forage_potential_total_yearly$forage_modifier <- 1
+  if(settings$correct_forage_mismatch) {
+    forage_potential_total_yearly <- forage_potential_total_yearly %>% mutate(
+      forage_modifier = forage_limit/forage_pot_total) # demand/supply  
   }
 
-  # Join with the forage
+  # increase the productivity of all forages in the deficit years
+  # (note: as all are increased by the same percentage, this does not impact the forage_pot_frac)
+  inputs_grazing_cover_temp <- inputs_grazing_cover_temp %>%
+    left_join(forage_potential_total_yearly %>% select(year, forage_modifier), by='year') %>%
+    mutate(
+      forage_modifier = if_else(forage_modifier < 1, 1, forage_modifier), # if the forage is higher than the limit, do not modify it
+      extra_forage = forage_pot * (forage_modifier - 1), # this is the amount added here (crops & pasture)
+      forage_pot = forage_pot * forage_modifier, # (crops & pasture)
+      productivity_t_dry = productivity_t_dry + extra_forage, # (pasture only)
+      productivity_t_ha_dry = productivity_t_dry/area # (pasture only)
+    ) %>% select(-forage_modifier)
+  
+  # record any supplementary forage in the landuse table
+  inputs_landuse <- inputs_landuse %>%
+    rename(prod_old = productivity_t_dry, prod_ha_old = productivity_t_ha_dry) %>% # keep the raw prod data
+    left_join(inputs_grazing_cover_temp %>%
+                select(year, parcel_name, landuse, crop_index, species, cohort_id, # matching cols
+                       extra_forage, productivity_t_dry, productivity_t_ha_dry), # data cols
+              by=c('year', 'parcel_name', 'landuse', 'crop_index', 'species', 'cohort_id')) %>%
+    # set the productivity values for the rows that are missing in the inputs_grazing_cover_temp dataframe
+    # (parcels that have no grazing are not in this dataframe)
+    mutate(productivity_t_dry = if_else(is.na(productivity_t_dry), prod_old, productivity_t_dry),
+           productivity_t_ha_dry = if_else(is.na(productivity_t_ha_dry), prod_ha_old, productivity_t_ha_dry)) %>%
+    select(-c(prod_old, prod_ha_old))
+  
+    # Join with the forage
     inputs_grazing_cover_temp <- inputs_grazing_cover_temp %>%
       left_join(select(forage_total_yearly, year, forage_yearly_t_dry), by = c("year"))
 
@@ -422,7 +484,7 @@ process_grazing_inputs <- function(
     mutate(forage_necessary_t_dry = forage_yearly_t_dry * forage_pot_frac) %>%
     # Limit forage eaten to the forage potential
     mutate(forage_total_t_dry = if_else(forage_necessary_t_dry > forage_pot, forage_pot, forage_necessary_t_dry)) %>%
-    mutate(forage_necessary_pot_diff_t_dry = forage_necessary_t_dry - forage_pot) %>%
+    mutate(forage_necessary_pot_diff_t_dry = round(forage_necessary_t_dry - forage_pot, 6)) %>%
     # Calculate forage residues, defined as a fraction of the TOTAL forage (ie forage_residue = forage_res_frac * forage_total)
     # need to rearrange this to be a function of forage eaten..
     mutate(forage_residue_t_dry = forage_total_t_dry * forage_res_frac) %>%
@@ -447,6 +509,7 @@ process_grazing_inputs <- function(
     summarise(forage_total_t_dry = sum(forage_total_t_dry),
               forage_eaten_t_dry = sum(forage_eaten_t_dry),
               forage_residue_t_dry = sum(forage_residue_t_dry),
+              forage_extra_t_dry = sum(extra_forage),
               .groups = 'keep') %>%
     ungroup() %>%
     # Join with the fodder inputs
@@ -480,7 +543,9 @@ process_grazing_inputs <- function(
     inputs_grazing_cover = inputs_grazing_cover,
     inputs_grazing_parcels = inputs_grazing_parcels,
     inputs_fodder_parcels = inputs_fodder_parcels,
-    error_messages = error_messages
+    forage_potential_total_yearly = forage_potential_total_yearly,
+    error_messages = error_messages,
+    inputs_landuse = inputs_landuse
     #inputs_grazing_parcels_monthly = inputs_grazing_parcels_monthly
   ))
 }
@@ -514,10 +579,10 @@ process_productivity_inputs <- function(inputs_landuse, inputs_grazing_cover, in
   inputs_landuse_temp <- inputs_landuse %>% 
     filter(landuse %in% c("pasture", "fallow", "annual crop", "shrub")) %>%
     left_join(inputs_grazing_cover %>% select(
-                     c("year", "parcel_name", "species", "crop_index", "tree_index", "was_grazed_cover",
+                     c("year", "parcel_name", "species", "crop_index", "cohort_id", "was_grazed_cover",
                        "forage_total_t_dry", "forage_eaten_t_dry", "forage_residue_t_dry",
                        "forage_total_t_ha_dry", "forage_eaten_t_ha_dry", "forage_residue_t_ha_dry")),
-              by = c("year", "parcel_name", "crop_index", "tree_index", "species")) %>%
+              by = c("year", "parcel_name", "crop_index", "cohort_id", "species")) %>%
     # Replace NA values with 0
     mutate(forage_total_t_dry = ifelse(is.na(forage_total_t_dry), 0, forage_total_t_dry),
            forage_eaten_t_dry = ifelse(is.na(forage_eaten_t_dry), 0, forage_eaten_t_dry),
@@ -1224,7 +1289,7 @@ process_baresoil_inputs <- function(inputs_baresoil, monitoringData, start_index
   bare_soil <- bare_soil %>% select(parcel_id, parcel_name, year, month, bareground, percent_area) %>% 
     arrange(parcel_id, year, month)
   bare_soil <- left_join(bare_soil, periods, by='year')  # add the period info
-
+  
   return(bare_soil)
 }
 
@@ -1233,13 +1298,13 @@ process_npp_inputs <- function (inputs_npp) {
   # re-scale so 1 is the mean value
   inputs_npp$npp_index <- inputs_npp$npp_index / 100
   inputs_npp$npp_total_tC_ha <- inputs_npp$npp_total_kgC_ha/1000
-
+  
   return(inputs_npp)
   
 }
 
 process_area_inputs <- function (inputs_parcel_fixed, inputs_farm_fixed) {
-
+  
   area_diff <- inputs_farm_fixed$area_parcels - inputs_farm_fixed$area_farm
   if (area_diff > 0) {
     inputs_parcel_fixed_temp <- inputs_parcel_fixed %>% 

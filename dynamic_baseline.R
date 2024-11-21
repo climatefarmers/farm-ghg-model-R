@@ -18,7 +18,7 @@ scale_inputs_for_dynamic_baseline <- function(inputs_productivity, inputs_npp, i
   ### 0. Prepare the data and define the columns that are impacted by the dynamic baseline
   # not all of these values are used, but here we amend everything that is conceptually affected
   prod <- left_join(inputs_productivity, inputs_npp[,c('year','npp_index','parcel_name')], by=c('year', 'parcel_name')) %>%
-    select(-tree_index, -percent_area, -frac_area, -percent_area_check, -green, -was_grazed_cover)
+    select(-cohort_id, -percent_area, -frac_area, -percent_area_check, -green, -was_grazed_cover)
   prod$scenario <- prod$period  # initialise the scenario column
   cols_to_amend <- c('harvest_t_dry', 'harvest_t_ha_dry',
                      'residue_t_dry', 'residue_t_ha_dry', 

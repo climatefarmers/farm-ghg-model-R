@@ -6,7 +6,7 @@ get_Cinputs_organic_amendments <- function (inputs_organicmatter, periods, all_p
   # also calculate the fraction of inputs relating to each DR ratio type (woody, annual crops, grassland, farmyard manure)
   C_inputs <- inputs_organicmatter %>%
     filter(amount_t>0) %>%
-    mutate(tC = amount_t * carbon_content_fresh) %>%
+    mutate(tC = amount_t * dry * dry_c) %>%
     group_by(parcel_name, year, year_index, period) %>%
     summarise(tC_total = sum(tC, na.rm=T),
               frac_woody_dr = sum(tC[dr_ratio_type=="woody"], na.rm=T) / tC_total,
@@ -64,7 +64,7 @@ get_Cinputs_trees <- function(tree_soil_inputs, include_tree_inputs){
       tC_bg_bl = sum(c_litt_bg_t_baseline),
       .groups='drop'
     )
-  
+
   # Reshape to long format and calculate total C and fraction woody
   # assuming that the above-ground inputs are woody and the below-ground inputs have the "grassland" DR ratio
   C_inputs_pr <- C_inputs_wide %>% 
@@ -92,7 +92,7 @@ get_Cinputs_trees <- function(tree_soil_inputs, include_tree_inputs){
   bl_avg <- C_inputs %>%
     filter(year_index < 0) %>%
     group_by(parcel_name) %>%
-    summarise(tC_mean = mean(tC, na.rm=T),
+    summarise(tC_mean = sum(tC, na.rm=T)/3, # use sum/3 as not all 3 years might be present
               frac_woody_dr = weighted.mean(frac_woody_dr, tC, na.rm=T),
               frac_annualcrops_dr = 0,
               frac_grassland_dr = weighted.mean(frac_grassland_dr, tC, na.rm=T),
@@ -160,11 +160,16 @@ get_Cinputs_crops_and_pasture <- function (inputs_productivity, inputs_fodder) {
   ### Calculation of crop input: Carbon input from cash crops and cover crops biomass turnover rates
   ### Calculation of pasture input: Carbon input from pasture biomass turnover
   # process the crops and pasture inputs (crop-level)
-  C_inputs <- inputs_productivity %>% 
-    mutate(c_shoot = (residue_t_dry + forage_residue_t_dry) * dry_c,
-           c_root = prod_bg * dry_c,
-           c_inputs = c_shoot*ag_turnover + c_root*bg_turnover) %>%
+  # the "residue_t_dry" for pastures represents the leftover biomass, so must be multipled by ag_turnover
+  # the other residues are just residues
+  
+  C_inputs <- inputs_productivity %>%
+    mutate(c_residue = if_else(landuse=="pasture", residue_t_dry * dry_c * ag_turnover, residue_t_dry * dry_c),
+           c_forage_residue = forage_residue_t_dry * dry_c,
+           c_root = prod_bg * dry_c * bg_turnover,
+           c_inputs = c_residue + c_forage_residue + c_root)
     # add the DR ratio information
+  C_inputs <- C_inputs %>%
     mutate(dr_ratio = case_when(
       landuse %in% c('annual crop', 'fallow') ~ 'annualcrops',
       landuse %in% c('pasture', 'shrub') ~ 'grassland'
@@ -184,15 +189,16 @@ get_Cinputs_crops_and_pasture <- function (inputs_productivity, inputs_fodder) {
   fodder_bl_avg <- inputs_fodder %>%
     filter(year_index < 0) %>%
     group_by(parcel_name) %>%
-    summarise(fodder_residue_t_dry = mean(fodder_residue_t_dry, na.rm=T),
+    summarise(fodder_residue_t_dry = sum(fodder_residue_t_dry, na.rm=T)/3,  # average (use sum/3 as not all years may be present)
               dry_c = mean(dry_c, na.rm=T))
   
   # join fodder residues to the C_inputs
+  bl_scenarios <- c('baseline_average', 'projected_baseline')
   C_inputs <- left_join(C_inputs,
                         inputs_fodder %>% select(parcel_name, year, year_index, fodder_residue_t_dry, dry_c),
                         by = c('parcel_name', 'year', 'year_index')) %>%
-    mutate(fodder_residue_t_dry = ifelse(scenario == "baseline_average", fodder_bl_avg$fodder_residue_t_dry[fodder_bl_avg$parcel_name == parcel_name], fodder_residue_t_dry),
-           dry_c = ifelse(scenario == "baseline_average", fodder_bl_avg$dry_c[fodder_bl_avg$parcel_name == parcel_name], dry_c)) %>%
+    mutate(fodder_residue_t_dry = ifelse(scenario %in% bl_scenarios, fodder_bl_avg$fodder_residue_t_dry[fodder_bl_avg$parcel_name == parcel_name], fodder_residue_t_dry),
+           dry_c = ifelse(scenario %in% bl_scenarios, fodder_bl_avg$dry_c[fodder_bl_avg$parcel_name == parcel_name], dry_c)) %>%
     replace_na(list(fodder_residue_t_dry = 0, dry_c = 0)) %>%
     mutate(tC_fodder = fodder_residue_t_dry * dry_c) %>%   # ag_turnover for fodder is assumed to be 1
     # modify the dr_ratio fractions, assuming that fodder has the "grassland" DR ratio
@@ -235,7 +241,7 @@ add_projected_baseline <- function(df_list, periods) {
   base <- C_inputs %>%
     filter(year_index < 0) %>%
     group_by(parcel_name, source) %>%
-    summarise(tC_mean = mean(tC, na.rm=T), 
+    summarise(tC_mean = sum(tC, na.rm=T)/3, # average of 3 years (not all three may be present)
               frac_woody_dr = weighted.mean(frac_woody_dr, tC, na.rm=T),
               frac_annualcrops_dr = weighted.mean(frac_annualcrops_dr, tC, na.rm=T),
               frac_grassland_dr = weighted.mean(frac_grassland_dr, tC, na.rm=T),

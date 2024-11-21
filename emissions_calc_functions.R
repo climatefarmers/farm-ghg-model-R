@@ -57,7 +57,7 @@ get_livestock_emissions <- function(livestock,
     
     # Calculate the CH4 emissions from enteric fermentation and manure
     livestock <- livestock %>% mutate(
-      ch4_kg_ent_ferm = amount * ef_enteric_fermentation_kg_head / 365 * days_on_farm_per_year,
+      ch4_kg_ent_ferm = amount * ef_enteric_fermentation_kg_head / 365 * max_yearly_grazing_days, # animals emit CH4 only after weaning
       ch4_kg_manure = amount * vs_kg_per_tonne_per_day * days_on_farm_per_year * (mass_kg_per_animal/1000) * ef_methane_manure / 1000
       )
     

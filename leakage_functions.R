@@ -6,16 +6,16 @@ imported_organic_matter_leakage <- function(organic_amendments){
     # calculate the co2_eq leakage
     leakage_all_sources <- organic_amendments %>%
       replace_na(list(percent_imported = 0, amount_t = 0)) %>%
-      mutate(organicmatter_t_c02eq = amount_t * percent_imported/100 * dry_c * .12 * (44/12)) %>%
-      select(year, year_index, period, parcel_name, type, sub_type, other, organicmatter_t_c02eq)
+      mutate(organicmatter_t_co2eq = amount_t * percent_imported/100 * dry * dry_c * .12 * (44/12)) %>%
+      select(year, year_index, period, parcel_name, type, sub_type, other, organicmatter_t_co2eq)
     
     # calculate annual sums
     leakage_annual <- leakage_all_sources %>%
       group_by(year, year_index, period) %>%
-      summarise(organicmatter_t_c02eq = sum(organicmatter_t_c02eq, na.rm=T))
+      summarise(organicmatter_t_co2eq = sum(organicmatter_t_co2eq, na.rm=T))
     
     # raise warning for unknown dry_c
-    if (sum(is.na(leakage_all_sources$organicmatter_t_c02eq)) > 0) {
+    if (sum(is.na(leakage_all_sources$organicmatter_t_co2eq)) > 0) {
       print("Warning: unknown dry_c in imported_manure_leakage()")
     }
   
@@ -24,9 +24,9 @@ imported_organic_matter_leakage <- function(organic_amendments){
     leakage_all_sources <- tibble(year = integer(), year_index = integer(), period = character(),
                                   parcel_name = character(), 
                                   type = character(), sub_type = character(), other = character(), 
-                                  organicmatter_t_c02eq = numeric())
+                                  organicmatter_t_co2eq = numeric())
     leakage_annual <- tibble(year = integer(), year_index = integer(), period = character(),
-                             organicmatter_t_c02eq = numeric())
+                             organicmatter_t_co2eq = numeric())
     
   }
   

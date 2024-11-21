@@ -5,7 +5,7 @@
 #### Note: There is a utility function right at the bottom of the file
 #### It is not executed within the model, but can be used to combine all of the sense check results into an XLSX file
 
-check_all_inputs <- function(inputs_raw, inputs_processed, grazing_error_messages, save_dir, email) {
+check_all_inputs <- function(inputs_raw, inputs_processed, grazing_error_messages, save_dir, output_name) {
   ### MAIN FUNCTION -- conduct all tests ###
   
   ## definition of the color codes
@@ -74,7 +74,7 @@ check_all_inputs <- function(inputs_raw, inputs_processed, grazing_error_message
   log4r::info(my_logger, paste0("Sense checks completed. The following data frames have issues:",
                                 "\n", paste0(unique(df$input), collapse=", "), "\n"))
 
-  write.csv(df, paste0(save_dir, "/", email, ".csv"), row.names=F)
+  write.csv(df, paste0(save_dir, "/", output_name, ".csv"), row.names=F)
   log4r::info(my_logger, "Sense checks completed.")
   
   return(df)
@@ -936,6 +936,9 @@ check_trees <- function(raw, processed, messages=c()) {
   if (nyrs==1) {
     return(messages)  # no need to check if only one year
   }
+  if (nrow(dbh_t)==0) {
+    return(messages)  # no trees
+  }
   
   # check for DBH greater than expected maximum for that tree species
   above_mature_size <- processed %>%
@@ -1046,209 +1049,4 @@ check_baresoil <- function(raw, messages=c()) {
     messages <- c(messages, paste0(msg, paste0(msg2, collapse='')))
   }
   return(messages)
-}
-
-###### UTILITY FUNCTIONS ######
-combine_sense_checks_to_xlsx <- function(farms_incl) {
-  
-  # settings
-  translate <- TRUE
-  
-  # get all files
-  dir_read <- 'output/data_check/errors/'
-  files <- list.files(dir_read, pattern = "*.csv", full.names = FALSE)
-  # remove those with "all_errors" in it
-  files <- files[!grepl("all_errors", files)]
-  # keep just those in farmers_incl
-  files <- files[files %in% paste0(farms_incl, '.csv')]
-  
-  # remove the file if it already exists
-  fn_out <- paste0(dir_read, "00_all_errors_", Sys.Date(), ".xlsx")
-  fn_frmr <- paste0(dir_read, "00_farmer_errors_", Sys.Date(), ".xlsx")
-  if (file.exists(fn_out)) file.remove(fn_out)
-  if (file.exists(fn_frmr)) file.remove(fn_frmr)
-  
-  # create 2x new workbook: one with all, one with farmer-related issues only
-  wb <- wb_workbook()
-  wb_farmer <- wb_workbook()  # excluding the science issues
-  # create a sheet with the overview
-  wb$add_worksheet("Overview")
-  wb_farmer$add_worksheet("Overview")
-  wb$add_worksheet("all")
-  wb_farmer$add_worksheet("all")
-  overview_list <- list()
-  overview_list_farmer <- list()
-  frmr_responsibility <- c("farmer","science&farmer")
-  
-  ### first, translate all the unique error messages
-  ### NOTE: THIS USES UP DEEPL ALLOWANCE, SO USE THIS VERY SPARINGLY
-  if (translate) {
-    # get the messages
-    unique_messages <- c()
-    for(fn in files) {
-      check_results <- read_csv(paste0(dir_read, fn), show_col_types=F)
-      unique_messages <- c(unique_messages, unique(check_results$message))
-    }
-    unique_messages <- unique(unique_messages)
-    
-    # read in the already-translated messages
-    fn_translations <- 'translated_error_messages.csv'
-    if (file.exists(fn_translations)) {
-      translations_old <- tibble(read.csv(fn_translations))
-      messages_to_translate <- unique_messages[!unique_messages %in% translations_old$EN]
-    } else {
-      messages_to_translate <- unique_messages
-    }
-    
-    # translate
-    if (length(messages_to_translate)>0) {
-      library(deeplr)
-      translations <- data.frame('EN'=messages_to_translate, 'ES'=NA, 'PT'=NA)
-      init_file <- jsonlite::fromJSON('../sensitive-data/init_file.json')
-      api_key <- init_file$deepl_api_key
-      translations$ES <- translate2(messages_to_translate, 
-                                   target_lang = "ES",
-                                   auth_key = api_key)
-      translations$PT <- translate2(messages_to_translate, 
-                                   target_lang = "PT",
-                                   auth_key = api_key)
-      
-      if (file.exists(fn_translations)) {
-        # combine the new and old translations
-        translations <- bind_rows(translations_old, translations)
-      }
-      # write to file
-      write.csv(translations, fn_translations, row.names=F)
-    } else {
-      translations <- translations_old
-    }
-  }
-  
-  
-  ### loop over the files
-  row_count <- 1
-  row_count_frmr <- 1
-  all_errors <- list()
-  for(fn in files) {
-    # load the data
-    farmer_email <- str_split(fn, ".csv")[[1]][1]
-    check_results <- read_csv(paste0(dir_read, fn), show_col_types=F)
-    
-    # translate the messages to spanish and portugese
-    if (translate) {
-      check_results <- check_results %>%
-        left_join(translations, by=c('message'='EN')) %>%
-        select(responsibility, code, input, message, ES, PT, details)
-    }
-    all_errors[[fn]] <- check_results
-    all_errors[[fn]]$farmer <- farmer_email
-    
-    # write data to a new sheet
-    # all
-    email_short <- str_split(farmer_email, "@")[[1]][1]
-    wb$add_worksheet(email_short)
-    wb$add_data_table(email_short, check_results, with_filter=F)
-    # farmer only
-    wb_farmer$add_worksheet(email_short)
-    check_results_farmer <- check_results %>% filter(responsibility %in% frmr_responsibility)
-    wb_farmer$add_data_table(email_short, check_results_farmer, with_filter=F)
-    
-    # save the workbook
-    wb_save(wb, file = fn_out, overwrite = TRUE)
-    wb_save(wb_farmer, file = fn_frmr, overwrite = TRUE)
-    
-    # add to the combined sheet at the start of the workbook
-    wb$add_data_table("all", data.frame(email=farmer_email), with_filter=F, start_row=row_count, tableStyle = "TableStyleLight9")
-    wb$add_data_table("all", check_results, with_filter=F, start_row=row_count+2)
-    row_count <- row_count + nrow(check_results) + 7
-    wb_farmer$add_data_table("all", data.frame(email=farmer_email), with_filter=F, start_row=row_count_frmr, tableStyle = "TableStyleLight9")
-    wb_farmer$add_data_table("all", check_results_farmer, with_filter=F, start_row=row_count_frmr+2)
-    row_count_frmr <- row_count_frmr + nrow(check_results_farmer) + 7
-    
-    # add to the overview data
-    code_info <- check_results %>% group_by(code) %>% summarise(n=n()) %>% as.data.frame()
-    resp_info <- check_results %>% group_by(responsibility) %>% summarise(n=n()) %>% as.data.frame()
-    if (nrow(code_info) == 0) code_info <- data.frame('code'=c("blue","red","orange","yellow"), 'n'=c(0,0,0,0))
-    if (nrow(resp_info) == 0) resp_info <- data.frame('responsibility'=c("farmer","science","science&farmer", "science&farmer (low priority)"), 'n'=c(0,0,0,0))
-    combined <- data.frame('email'=farmer_email, 
-                           'name'=c(code_info[,1], resp_info[,1]), 
-                           'count'=c(code_info[,2], resp_info[,2]))
-    overview_list[[farmer_email]] <- combined
-    
-    # same for farmers
-    code_info <- check_results %>% filter(responsibility %in% frmr_responsibility) %>% group_by(code) %>% summarise(n=n()) %>% as.data.frame()
-    resp_info <- check_results %>% filter(responsibility %in% frmr_responsibility) %>% group_by(responsibility) %>% summarise(n=n()) %>% as.data.frame()
-    if (nrow(code_info) == 0) code_info <- data.frame('code'=c("blue","red","orange","yellow"), 'n'=c(0,0,0,0))
-    if (nrow(resp_info) == 0) resp_info <- data.frame('responsibility'=c("farmer","science&farmer"), 'n'=c(0,0))
-    combined <- data.frame('email'=farmer_email, 
-                           'name'=c(code_info[,1], resp_info[,1]), 
-                           'count'=c(code_info[,2], resp_info[,2]))
-    overview_list_farmer[[farmer_email]] <- combined
-    
-    # create a farmer-specific workbook
-    # with a sheet based on the current date
-    wb_frmr_i <- wb_workbook()
-    date_str <- as.character(Sys.Date())
-    wb_frmr_i$add_worksheet(date_str)
-    # add their data
-    wb_frmr_i$add_data_table(date_str, check_results_farmer, with_filter=F)
-    # write
-    dir_frmr_i <- paste0('output/data_check/individual_farmer/', farmer_email, "/")
-    if (!dir.exists(dir_frmr_i)) dir.create(dir_frmr_i, recursive = TRUE)
-    fn_frmr_i <- paste0(dir_frmr_i, "errors_", farmer_email, ".xlsx")
-    wb_save(wb_frmr_i, file = fn_frmr_i, overwrite = TRUE)
-  }
-  
-  # load the data from Bilal's tracker
-  perc_complete <- read_csv('../sensitive-data/farm_info_with_data_progress.csv', show_col_types=F)
-  perc_complete$percent_complete <- as.numeric(perc_complete$percent_complete)
-  perc_complete <- perc_complete %>% select(email_address, farm_id_monitoringdatas, percent_complete, sense_checking_complete)
-  
-  # format the overview data and add to the workbook
-  overview_df <- do.call(rbind, overview_list) %>% as_tibble()
-  overview_df$name <- factor(overview_df$name, levels=c("blue","red","orange","yellow","farmer","science","science&farmer", "science&farmer (low priority)"))
-  overview_df <- overview_df %>% arrange(email, name)
-  overview_wide <- overview_df %>%
-    pivot_wider(names_from = name, values_from = count, names_prefix = "# ", values_fill=0)
-  overview_wide$total <- overview_wide$`# blue` + overview_wide$`# red` + overview_wide$`# orange` + overview_wide$`# yellow`
-  # reorder the columns so it is email, total, then the others
-  overview_wide <- overview_wide[, c(1, ncol(overview_wide), 2:(ncol(overview_wide)-1))]
-  # add the % complete
-  overview_wide <- overview_wide %>% left_join(perc_complete, by=c("email"="email_address"))
-  # write
-  wb$add_data_table("Overview", overview_wide, with_filter=F)
-  wb_save(wb, file = fn_out, overwrite = TRUE)
-  
-  # same thing for the farmer-only data
-  overview_df_farmer <- do.call(rbind, overview_list_farmer) %>% as_tibble()
-  overview_df_farmer$name <- factor(overview_df_farmer$name, levels=c("blue","red","orange","yellow","farmer","science&farmer"))
-  overview_df_farmer <- overview_df_farmer %>% arrange(email, name)
-  overview_wide_farmer <- overview_df_farmer %>%
-    pivot_wider(names_from = name, values_from = count, names_prefix = "# ", values_fill=0)
-  overview_wide_farmer$total <- overview_wide_farmer$`# blue` + overview_wide_farmer$`# red` + overview_wide_farmer$`# orange` + overview_wide_farmer$`# yellow`
-  # reorder the columns so it is email, total, then the others
-  overview_wide_farmer <- overview_wide_farmer[, c(1, ncol(overview_wide_farmer), 2:(ncol(overview_wide_farmer)-1))]
-  # add the % complete
-  overview_wide_farmer <- overview_wide_farmer %>% left_join(perc_complete, by=c("email"="email_address"))
-  # write
-  wb_farmer$add_data_table("Overview", overview_wide_farmer, with_filter=F)
-  wb_save(wb_farmer, file = fn_frmr, overwrite = TRUE)
-  
-  # write a csv with all errors comb
-  all_comb <- do.call(bind_rows, all_errors)
-  all_comb <- all_comb %>% left_join(perc_complete, by=c("farmer"="email_address"))
-  all_comb <- all_comb %>% arrange(desc(percent_complete), farmer)
-  write.csv(all_comb, paste0(dir_read, "00_all_errors_single_sheet_", Sys.Date(), ".csv"), row.names=F)
- 
-  # group by error type and sum
-  error_freq <- all_comb %>% group_by(
-    responsibility, code, input, message, ES, PT) %>%
-    summarise(n=n(), .groups='drop') %>%
-    arrange(desc(n))
-  write.csv(error_freq, paste0(dir_read, "00_all_errors_freq_", Sys.Date(), ".csv"), row.names=F)
-  
-  # get the errors about farm area
-  farm_area_errors <- all_comb %>% filter(input=="farm_fixed")
-  write.csv(farm_area_errors, paste0(dir_read, "00_all_errors_farm_area_", Sys.Date(), ".csv"), row.names=F)
-  
 }

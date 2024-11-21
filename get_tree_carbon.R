@@ -7,7 +7,7 @@ get_tree_carbon <- function(
     periods,
     inputs_parcels_fixed,
     trees_felled_raw,
-    email
+    output_name
 ) {
   ## MAIN FUNCTION
   # This function calculates tree carbon stocks and litter amounts
@@ -73,6 +73,7 @@ get_tree_carbon <- function(
     trees_managed$planting_year[trees_managed$planting_year=="before 2018"] <- 0
     trees_managed$planting_year <- as.integer(trees_managed$planting_year)
     
+    
     ## Calculate values for each tree cohort -----
     
     # Calculation of above and below-ground biomass
@@ -99,12 +100,6 @@ get_tree_carbon <- function(
                 b_others,b_citrus,b_cork,b_a,b_b,b_c,b_d,comment,equation_type,
                 max_biomass_kg, overshoot_ratio_actual, overshoot_ratio_mature))
     
-    # Round values
-    trees_managed <- trees_managed %>% mutate_at(
-      vars(agb_actual, bgb_actual, agb_mature, bgb_mature, total_actual_c_t_dry,
-           total_mature_c_t_dry), .funs = ~round(., 3)
-    )
-    
     # Calculate long term carbon stocks for each tree cohort
     trees_managed <- trees_managed %>%
       mutate(
@@ -115,8 +110,7 @@ get_tree_carbon <- function(
         # calculation
         c_longterm_t = (1/lifespan_years) * (
           0.5 * time_growing * frac_of_max_achieved * total_mature_c_t_dry + 
-            time_at_max * total_mature_c_t_dry),
-        c_longterm_t = round(c_longterm_t, 3)
+            time_at_max * total_mature_c_t_dry)
       )
     
     
@@ -208,11 +202,10 @@ get_tree_carbon <- function(
     trees_managed_soil <- trees_managed_soil %>% mutate(
       c_roots = c_actual * (r_s_ratio/(r_s_ratio+1)),
       c_roots_longterm = c_longterm * (r_s_ratio/(r_s_ratio+1)),
-      c_litt_bg_t = round(c_roots * bg_turnover, 3),
-      c_litt_bg_t_lt = round(c_roots_longterm * bg_turnover, 3),
+      c_litt_bg_t = c_roots * bg_turnover,
+      c_litt_bg_t_lt = c_roots_longterm * bg_turnover,
       c_litt_bg_t_lt = pmax(c_litt_bg_t, c_litt_bg_t_lt), # If the long term is lower than the actual, set equal to actual
-      c_litt_ag_t = residue_t_dry * dry_c,
-    ) %>% mutate_at(vars(c_roots, c_roots_longterm), .funs = ~round(., 3))
+      c_litt_ag_t = residue_t_dry * dry_c)
 
     # Aggregate at parcel level
     trees_soil_parcel <- trees_managed_soil %>% 
@@ -317,10 +310,6 @@ get_tree_carbon <- function(
       select(-c(a,b,c,d,e,f,j,k,exp,poly,quad,cyp,cork,b_poly,b_exp,b_common,
                 b_others,b_citrus,b_cork,b_a,b_b,b_c,b_d,comment,equation_type,
                 max_biomass_kg, overshoot_ratio_felled))
-    # Round values
-    trees_felled <- trees_felled %>% mutate_at(
-      vars(agb_felled, bgb_felled, total_felled_c_t_dry), .funs = ~round(., 3)
-    )
     
     # Calculate yearly total CO2 equivalents of felled trees
     felled_biomass_year <- trees_felled %>%
@@ -329,10 +318,6 @@ get_tree_carbon <- function(
         c_felled_t = sum(total_felled_c_t_dry),
         co2_trees_felled = c_felled_t * 44/12 * (-1),  # Convert C to CO2 and make negative (negative CO2 removals)
         .groups = 'drop'
-      ) %>%
-      mutate(
-        c_felled_t = round(c_felled_t, 3),
-        co2_trees_felled = round(co2_trees_felled, 3)
       )
   }
   

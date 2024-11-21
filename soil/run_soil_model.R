@@ -1,54 +1,26 @@
-run_soil_model <- function(init_data, monitoringData, farm_EnZ, inputs, factors, settings, periods){
+run_soil_model <- function(monitoringData,
+                           farm_EnZ,
+                           inputs,
+                           factors,
+                           settings,
+                           periods,
+                           climate_data, 
+                           soilMapsData) {
   ## This function has the following components
-  ## 1. Get climate data
-  ## 2. Get soil data
-  ## 3. Calculate C inputs per parcel and scenario
-  ## 4. SOC initialisation runs
-  ## 5. Model runs
+  ## 1. Prepare climate data
+  ## 2. Calculate C inputs per parcel and scenario
+  ## 3. SOC initialisation runs
+  ## 4. Model runs
   
   
   ## Log starting run message
   log4r::info(my_logger, "run_soil_model.R started running")
   
+  ###### 1. Prepare climate data ######
   ## Sourcing code from files
   source(file.path("soil", "model_semiArid_functions.R"), local = TRUE)
   source(file.path("soil", "modified_semiArid_functions.R"), local = TRUE)
   source(file.path("soil", "calc_functions_soil_modelling.R"), local = TRUE)
-  source("weather_data_pulling_functions.R", local = TRUE)
-  
-  
-  ###### 1. Get climate data ######
-  latlon_farm <- rev(colMeans(do.call('rbind', inputs$inputs_parcel_fixed$coordinates)))  # [lat, lon]: must reverse from the inputs df
-  
-  # Just for testing
-  # weather_data <- read_csv(file.path("data", "test_weather_data.csv"), show_col_types = FALSE) # debug line
-  # 
-  # ## Extracting climate from different periods
-  # past_weather <- data.frame(
-  #   month = weather_data$month,
-  #   evap = weather_data$past_evap,
-  #   pevap = weather_data$past_pevap,
-  #   precipitation = weather_data$past_precipitation,
-  #   temperature = weather_data$past_temperature
-  # )
-  # climate_rcp4.5 <- data.frame(
-  #   month = weather_data$month,
-  #   evap = weather_data$future_evap_rcp4.5,
-  #   pevap = weather_data$future_pevap_rcp4.5,
-  #   precipitation = weather_data$future_precipitation_rcp4.5,
-  #   temperature = weather_data$future_temperature_rcp4.5
-  # )
-  
-  if(settings$use_test_climate){  # will skip fetching climate data and use dummy data
-    climate_data <- read_csv(file.path("example-farm-data", "climate_data_1950_2022_Alves4.csv"), show_col_types = FALSE) # For testing only
-  } else {
-    climate_data <- get_past_weather_data(init_data, inputs$inputs_farm_fixed$farm_id, latlon_farm[1], latlon_farm[2], "1950_2022", averaged=FALSE)
-    # weather_data <- rbind(get_past_weather_data(init_data, latlon_farm[1], latlon_farm[2], "1950_2022"),
-    #                    # get_past_weather_data(init_data, latlon_farm[1], latlon_farm[2], "2021"),
-    #                    # get_past_weather_data(init_data, latlon_farm[1], latlon_farm[2], "2022"),
-    #                    get_future_weather_data(init_data, latlon_farm[1], latlon_farm[2], scenario="rcp4.5"),
-    #                    get_future_weather_data(init_data, latlon_farm[1], latlon_farm[2], scenario="rcp8.5"))
-  }
   
   # Set climate for different runs:
   climate_periods <- get_climate_periods(climate_data = climate_data, proj_start_year = as.numeric(inputs$inputs_farm_fixed$project_start_year))
@@ -59,14 +31,8 @@ run_soil_model <- function(init_data, monitoringData, farm_EnZ, inputs, factors,
   model_version <- ifelse(sum(present_climate$precipitation) / sum(present_climate$pevap) < 0.65 &
                             sum(present_climate$precipitation) < 600, "Semi-arid", "Normal")
 
-  
-  ###### 2. Get soil data ######
-  soilMapsData <- get_soil_data(inputs$inputs_farm_fixed$pars_farmId, settings)  # Gets soil data from https://maps.isric.org/ (AWS)
-  # soil_inputs <- get_soil_inputs(inputs, farms_everything$soilAnalysis, soilMapsData)
-  # ^^ can probably delete this line and the associated functions, as it is not used further in the code
-  # ^^ (only the irrigation, but it is out of date)
 
-  ###### 3. Calculate C inputs per parcel and scenario ######
+  ###### 2. Calculate C inputs per parcel and scenario ######
   ## individual C input calculations
   # a) inputs NOT affected by the dynamic baseline
   organic_amendments <- get_Cinputs_organic_amendments(inputs$inputs_organicmatter, periods, inputs$inputs_parcel_fixed$parcel_name) # note: this creates a complete data frame for all parcels
@@ -208,7 +174,7 @@ run_soil_model <- function(init_data, monitoringData, farm_EnZ, inputs, factors,
   # 
   
   
-  ###### 4. SOC initialisation ######
+  ###### 3. SOC initialisation ######
   ## Initialise by making the model reach SOC of natural areas of the pedo-climatic area
   ## Pulling DPM/RPM ratios from different kinds of land use in corresponding pedo-climatic area 
   dr_ratio_woody = unique(factors$factors_natural_area$dr_ratio_woody)
@@ -290,7 +256,7 @@ run_soil_model <- function(init_data, monitoringData, farm_EnZ, inputs, factors,
   }  # end parcel loop
   
   
-  ###### 5. Model runs ######
+  ###### 4. Model runs ######
   # Data frame for holding all results
   all_results <- tibble()
   project_years <- seq(1, max(parcel_Cinputs$year_index))
@@ -483,8 +449,14 @@ calculate_soil_ERRs <- function(soil_model_results, inputs) {
     select(parcel_name, year_index, Cinputs_ha_proj, Cinputs_ha_base)
   # now summarise the SOC over the runs and add the Cinputs
   soc_parcels <- soc_allruns_parcels %>% 
-    group_by(parcel, year_index) %>% 
-    summarise_all(mean, .groups='drop') %>% select(-c(run))
+    group_by(parcel, year_index, area) %>% 
+    summarise(
+      SOC_ha_bl_mean = mean(SOC_ha_bl),
+      SOC_ha_pr_mean = mean(SOC_ha_pr),
+      SOC_abs_bl_mean = mean(SOC_abs_bl),
+      SOC_abs_pr_mean = mean(SOC_abs_pr),
+      SOC_abs_pbdiff_mean = mean(SOC_abs_pbdiff),
+      .groups='drop')
   soc_parcels <- left_join(soc_parcels, parcel_Cinputs_all, by=c('parcel'='parcel_name', 'year_index')) %>%
     mutate(Cinputs_abs_proj = Cinputs_ha_proj * area,
            Cinputs_abs_base = Cinputs_ha_base * area,
@@ -530,51 +502,15 @@ calculate_soil_ERRs <- function(soil_model_results, inputs) {
            CO2eq_soil_gain_sd = CO2_gain_sd,
            soil_has_na = has_na) %>% 
     select(year, year_index, CO2eq_soil_gain_95conf, CO2eq_soil_cum, CO2eq_soil_gain_mean, CO2eq_soil_gain_sd, soil_has_na)
-
   
   ## Return values ----
   return(list(soc_monthly=soc_monthly,      # (a)
               soc_parcels=soc_parcels,      # (b)
               soc_farm=soc_farm,            # (c)
-              yearly_results=yearly_results # (d)
+              yearly_results=yearly_results,# (d)
+              soc_allruns_farm=soc_allruns_farm # for the excel model
               ))
 }
-
-
-get_soil_data <- function(farmId, settings) {
-  
-  if(settings$use_test_soil) {  
-    soilMapsData <- as.list(read.csv(file.path("example-farm-data", "soilMaps_data_Alves4.csv"))) # For testing only
-  } else {
-    # extract soil data from AWS (original source: ISRIC)
-    SOC_df = s3read_using(FUN = read_csv, object = paste0("s3://soil-modelling/soil_variables/", farmId, "/ocs.csv"), show_col_types = F)
-    clay_df = s3read_using(FUN = read_csv, object = paste0("s3://soil-modelling/soil_variables/", farmId, "/clay.csv"), show_col_types = F)
-    silt_df = s3read_using(FUN = read_csv, object = paste0("s3://soil-modelling/soil_variables/", farmId, "/silt.csv"), show_col_types = F)
-    bdod_df = s3read_using(FUN = read_csv, object = paste0("s3://soil-modelling/soil_variables/", farmId, "/bdod.csv"), show_col_types = F)
-    
-    # Fill soil maps data frame. Waited for values from soil maps
-    # soilMapsData = data.frame(SOC=mean(SOC_df$`ocs_0-30cm_mean`), SOC_Q0.05=mean(SOC_df$`ocs_0-30cm_Q0.05`), SOC_Q0.95=mean(SOC_df$`ocs_0-30cm_Q0.95`), 
-    #                           clay=mean(clay_df$`clay_5-15cm_mean`)/10, clay_Q0.05=mean(clay_df$`clay_5-15cm_Q0.05`)/10, clay_Q0.95=mean(clay_df$`clay_5-15cm_Q0.95`)/10, 
-    #                           silt=mean(silt_df$`silt_5-15cm_mean`)/10, silt_Q0.05=mean(silt_df$`silt_5-15cm_Q0.05`)/10, silt_Q0.95=mean(silt_df$`silt_5-15cm_Q0.95`)/10, 
-    #                           bulk_density=mean(bdod_df$`bdod_5-15cm_mean`)/100, bdod_Q0.05=mean(bdod_df$`bdod_5-15cm_Q0.05`)/100, bdod_Q0.95=mean(bdod_df$`bdod_5-15cm_Q0.95`)/100)# waiting for values from soil maps
-    
-    # Remove all 0 or missing values from SOC_df (e.g. from water surfaces or similar)
-    SOC_df <- SOC_df %>% replace_na(list(`ocs_0-30cm_mean` = 0))
-    SOC_0_30 <- SOC_df %>% filter(`ocs_0-30cm_mean` > 0) %>% select(`ocs_0-30cm_mean`) %>% pull()
-    
-    # Lower clay correlates with higher credits, so we take the 75th percentile of all values in the farm area as a conservative approach.
-    # The SOC value should not be critical since a spinup is later done, but a conservative approach is taken here as well using the 25th percentile.
-    soilMapsData = list(
-      'SOC' = as.numeric(quantile(SOC_0_30, 0.05)),
-      'clay' = as.numeric(quantile(clay_df$`clay_5-15cm_mean`/10, 0.75)),
-      'silt' = mean(silt_df$`silt_5-15cm_mean`)/10, 
-      'bulk_density' = mean(bdod_df$`bdod_5-15cm_mean`)/100
-    )
-  }
-  
-  return(soilMapsData)
-}
-
 
 generate_stochastic_inputs <- function(n, settings, se_field_carbon_in, se_inputs_nonfarm, soil_data, spinup_climate, present_climate) {
   ## sample the factors from normal distributions

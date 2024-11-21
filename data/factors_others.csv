@@ -17,5 +17,5 @@ frac_leak_imp_manure,1,Fraction of imported manure considered leakge
 frac_leak_imp_compost,1,Fraction of imported compost considered leakge
 frac_leak_imp_hay,1,Fraction of imported hay considered leakge
 kgsqm2tha,10,Conversion factor kg/m2 in t/ha
-npp_max_frac,0.5,maximum npp value that can be assigned to a single crop
+npp_max_frac,1,maximum npp value that can be assigned to a single crop
 avg_C_frac,0.5,

@@ -1243,13 +1243,13 @@ get_landuse_inputs <- function(monitoringData, start_index) {
 }
 
 
-get_fixed_farm_inputs <- function(monitoringData, inputs_parcel_fixed) {
+get_fixed_farm_inputs <- function(monitoringData, farmInfo, inputs_parcel_fixed) {
   
-  farm_area <- as.numeric(monitoringData$farmInfo$farmSize)
+  farm_area <- as.numeric(farmInfo$farmSize)
   all_parcels_area <- sum(inputs_parcel_fixed$area)
   
   inputs_farm_fixed <- data.frame(farm_id            = monitoringData$farmId,
-                                  pars_farmId        = monitoringData$farmInfo$farmId,
+                                  pars_farmId        = farmInfo$farmId,
                                   email              = monitoringData$email,
                                   farm_id_cf         = ifelse(is.null(monitoringData$uniqueCfFarmId), NA, monitoringData$uniqueCfFarmId),
                                   project_start_year = monitoringData$projectStartYear,
@@ -1417,41 +1417,6 @@ get_pasture_inputs <- function(monitoringData, start_index){
   return(inputs_pasture)
 }
 
-# this function is not used, so commenting out for now
-# get_soil_inputs = function(landUseSummaryOrPractices, soilAnalysis, soilMapsData){
-#   # takes landUseSummaryOrPractices from farms collection
-#   # extracts parcels input dataframe 
-#   parcel_names <- landUseSummaryOrPractices[[1]]$parcelName
-#   soil_inputs = data.frame(parcel_ID = c(), scenario = c(), clay = c(), irrigation=c())
-#   for (i in c(1:length(parcel_names))){
-#     for (j in c(0:10)){
-#       year_str <- paste0('year', j)
-#       soil_inputs <- rbind(soil_inputs,data.frame(
-#         parcel_ID = c(parcel_names[i]),
-#         scenario = c(year_str),
-#         clay = c(get_clay_content(soilAnalysis, soilMapsData)),
-#         silt = c(get_silt_content(soilAnalysis, soilMapsData)),
-#         SOC = c(get_SOC_content(soilAnalysis, soilMapsData)),
-#         bulk_density = c(get_bulk_density(soilAnalysis, soilMapsData)),
-#         irrigation = c(ifelse(is.null(landUseSummaryOrPractices[[1]][[year_str]]$irrigation[i]),FALSE,
-#                               ifelse(is.na(landUseSummaryOrPractices[[1]][[year_str]]$irrigation[i]),FALSE,
-#                                      landUseSummaryOrPractices[[1]][[year_str]]$irrigation[i])))))
-#       if (j==0){
-#         soil_inputs <- rbind(soil_inputs,data.frame(
-#           parcel_ID = c(parcel_names[i]),
-#           scenario = c("baseline"),
-#           clay = c(get_clay_content(soilAnalysis, soilMapsData)),
-#           silt = c(get_silt_content(soilAnalysis, soilMapsData)),
-#           SOC = c(get_SOC_content(soilAnalysis, soilMapsData)),
-#           bulk_density = c(get_bulk_density(soilAnalysis, soilMapsData)),
-#           irrigation = c(ifelse(is.null(landUseSummaryOrPractices[[1]][[year_str]]$irrigation[i]),FALSE,
-#                                 ifelse(is.na(landUseSummaryOrPractices[[1]][[year_str]]$irrigation[i]),FALSE,
-#                                        landUseSummaryOrPractices[[1]][[year_str]]$irrigation[i])))))
-#       }
-#     }
-#   }
-#   return(soil_inputs)
-# }
 
 get_tillage_inputs <- function(monitoringData, start_index) {
   
@@ -1549,10 +1514,10 @@ get_irrigation_inputs <- function(monitoringData, start_index) {
 }
 
 get_npp_inputs <- function(npp_data, start_index) {
-  
-  inputs_npp <- as_tibble(npp_data) %>%
-    select(-farmId)
-  
+
+  inputs_npp <- as_tibble(npp_data) %>% 
+    select(parcel_name, year, npp_index, npp_total_kgC_ha, mean_evi_buffer)
+
   return(inputs_npp)
   
 }
