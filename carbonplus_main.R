@@ -28,6 +28,9 @@ carbonplus_main <- function(settings, local_run_farmId){
   # clear and prepare log and output directory
   if(!dir.exists('logs')) {dir.create('logs')}
   if(!dir.exists('output')) {dir.create('output')}
+  
+  save_dir <- file.path('output','model_results', output_name)
+  
   # unlink(file.path("logs", "*"), recursive = TRUE)
   # unlink(file.path("output", "*"), recursive = TRUE)  # Tim turning this off to keep the output files
   
@@ -61,6 +64,8 @@ carbonplus_main <- function(settings, local_run_farmId){
   # Use the two lines below if the json file was exported from mongoDB
   # monitoringData <- as.list(fromJSON(file.path(inputs_path,"monitoringData.json")))
   # monitoringData$yearlyFarmData <- monitoringData$yearlyFarmData[[1]]
+  climate_data <- read_csv(file.path(inputs_path,"climate.csv"))
+  soilMapsData <- read_csv(file.path(inputs_path,"soil.csv"))
   
   
   ## Extracting and Processing Inputs -----------------------------------------
@@ -323,11 +328,6 @@ carbonplus_main <- function(settings, local_run_farmId){
     project_years
   )
   
-  
-  ## Get climate and soil data -------------------------------------------------
-  
-  climate_data <- read_csv(file.path(inputs_path,"climate.csv"))
-  soilMapsData <- read_csv(file.path(inputs_path,"soil.csv"))
 
   ## Running the tree biomass, soil model and emissions calculations -----------
 
@@ -423,8 +423,6 @@ carbonplus_main <- function(settings, local_run_farmId){
   
   ## Write data to files -----------------------------------------------------
   
-  save_dir <- file.path('output','model_results', output_name)
-  
   # Inputs
   inputs_to_write <- inputs_processed
   inputs_to_write$model_settings <- data.frame(settings)
@@ -457,17 +455,6 @@ carbonplus_main <- function(settings, local_run_farmId){
   )
   write_list_to_csvs(outputs_to_write, path = file.path(save_dir, 'outputs'), prefix = "", simplify_names=F)
 
-  # Write out input files
-  if(settings$write_out_inputs) {
-    path <- file.path(save_dir, "input_files")
-    if (!dir.exists(here(path))) dir.create(here(path), recursive = TRUE)
-    write_csv(climate_data, file.path(path, "climate.csv"))
-    write_csv(soilMapsData, file.path(path, "soil.csv"))
-    write_csv(tibble(env_zone=farm_EnZ), file.path(path, "env_zone.csv"))
-    write_csv(inputs_raw$inputs_npp, file.path(path, "npp.csv"))
-    write_json(farmInfo, file.path(path, "farmInfo.json"))
-    write_json(monitoringData, file.path(path, "monitoringData.json"), na="null")
-  }
   
   ## Plotting ------------------------------------------------------------------
   plot_dir <- file.path(save_dir, 'plots')
