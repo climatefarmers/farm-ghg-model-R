@@ -10,6 +10,7 @@ settings <- list(
   
   # Input and output settings
   local_inputs_path = "./example-farm-data",
+  local_use_json = F,  # if TRUE will read local inputs from json files, else from csv
   write_out_inputs = T,
   
   # Uncertainty calculations settings

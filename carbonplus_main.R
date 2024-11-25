@@ -51,6 +51,9 @@ carbonplus_main <- function(settings, local_run_farmId){
   source(file.path("get_leakage.R"), local = TRUE)
   source(file.path("utility_functions.R"), local = TRUE)
   source(file.path("get_tree_carbon.R"), local = TRUE)
+  source("data_extraction_functions.R", local = TRUE)
+  source("data_processing_functions.R", local = TRUE)
+  source("data_checking_functions.R", local = TRUE)
   
 
   # Read inputs from local directory -------------------------------------------
@@ -59,23 +62,10 @@ carbonplus_main <- function(settings, local_run_farmId){
   farm_EnZ <- read_csv(file.path(inputs_path,"env_zone.csv")) %>% pull(env_zone)
   npp_data <- read_csv(file.path(inputs_path,"npp.csv"))
   farmInfo <- fromJSON(read_json(file.path(inputs_path,"farmInfo.json"), simplifyVector = TRUE))
-  # Use the line below if the json file comes from saving after a model run (settings$write_out_inputs)
-  monitoringData <- read_json(file.path(inputs_path,"monitoringData.json"), simplifyVector = TRUE)
-  # Use the two lines below if the json file was exported from mongoDB
-  # monitoringData <- as.list(fromJSON(file.path(inputs_path,"monitoringData.json")))
-  # monitoringData$yearlyFarmData <- monitoringData$yearlyFarmData[[1]]
   climate_data <- read_csv(file.path(inputs_path,"climate.csv"))
   soilMapsData <- read_csv(file.path(inputs_path,"soil.csv"))
   
-  
-  ## Extracting and Processing Inputs -----------------------------------------
-  
-  source("data_extraction_functions.R", local = TRUE)
-  source("data_processing_functions.R", local = TRUE)
-  source("data_checking_functions.R", local = TRUE)
-  
-
-  ## Reading in calculation factors from csv files
+  ## Read calculation factors -----------------------------
   factors <- list()
   factors$factors_livestock <- read_csv(file.path("data", "factors_livestock.csv"), show_col_types = FALSE)
   factors$factors_crops <- read_csv(file.path("data", "factors_crops.csv"), show_col_types = FALSE)
@@ -96,93 +86,121 @@ carbonplus_main <- function(settings, local_run_farmId){
   factors$factors_uncertainties <- read_csv(file.path("data", "factors_uncertainties.csv"), show_col_types = FALSE)
   print("Finished reading factors.")
   
+  ## Get farm data ---------------------------------------
+  if(settings$local_use_json) {
+    
+    # Use the line below if the json file comes from saving after a model run (settings$write_out_inputs)
+    monitoringData <- read_json(file.path(inputs_path,"monitoringData.json"), simplifyVector = TRUE)
+    # Use the two lines below if the json file was exported from mongoDB
+    # monitoringData <- as.list(fromJSON(file.path(inputs_path,"monitoringData.json")))
+    # monitoringData$yearlyFarmData <- monitoringData$yearlyFarmData[[1]]
+    
+    ## Extracting Inputs -----------------------------------------
+    ## Farm data extraction -----------------------------------------------------
+    ## Define start index of yearly data
+    years <- sort(unique(monitoringData$yearlyFarmData$year))
+    project_start_year <- as.numeric(monitoringData$projectStartYear)
+    start_index <- project_start_year - years[1] - 2
+    # Check if start_index is 2018 if not, raise warning, because I'm not sure what will happen then
+    # Check if baseline data is missing
+    start_bl <- as_tibble(monitoringData$yearlyFarmData$parcelLevelData[[start_index]]$parcelFixedValues)
 
-  ## Farm data extraction -----------------------------------------------------
-  ## Define start index of yearly data
-  years <- monitoringData$yearlyFarmData$year
-  start_index <- as.numeric(monitoringData$projectStartYear) - years[1] - 2
-  # Check if start_index is 2018 if not, raise warning, because I'm not sure what will happen then
-  # Check if baseline data is missing
-  start_bl <- as_tibble(monitoringData$yearlyFarmData$parcelLevelData[[start_index]]$parcelFixedValues)
-  
-  inputs_raw <- list()
-  ## Fixed farm and parcel inputs
-  inputs_raw$inputs_parcel_fixed <- get_fixed_parcel_inputs(monitoringData, start_index)
-  inputs_raw$inputs_farm_fixed <- get_fixed_farm_inputs(monitoringData, farmInfo, inputs_raw$inputs_parcel_fixed)
-  
-  ## Yearly farm inputs
-  
-  # Fuel & fertilizer
-  inputs_raw$inputs_fuel_direct <- get_fuel_inputs_direct(monitoringData, start_index)
-  inputs_raw$inputs_fuel_indirect <- get_fuel_inputs_indirect(monitoringData, start_index)
-  inputs_raw$inputs_fertilizer <- get_fertilizer_inputs(monitoringData, start_index)
-  
-  # Livestock
-  inputs_livestock_infarm <- get_livestock_inputs(monitoringData, factors$factors_livestock, start_index)
-  inputs_raw$inputs_livestock_category <- inputs_livestock_infarm$livestock_category
-  inputs_raw$inputs_livestock_species <- inputs_livestock_infarm$livestock_species
-  inputs_raw$inputs_livestock_outfarm <- inputs_livestock_infarm$livestock_outfarm
-  inputs_raw$inputs_grazing_management <- inputs_livestock_infarm$grazing_management
+    inputs_raw <- list()
+    ## Fixed farm and parcel inputs
+    inputs_raw$inputs_parcel_fixed <- get_fixed_parcel_inputs(monitoringData, start_index)
+    inputs_raw$inputs_farm_fixed <- get_fixed_farm_inputs(monitoringData, farmInfo, inputs_raw$inputs_parcel_fixed)
+    
+    ## Yearly farm inputs
+    
+    # Fuel & fertilizer
+    inputs_raw$inputs_fuel_direct <- get_fuel_inputs_direct(monitoringData, start_index)
+    inputs_raw$inputs_fuel_indirect <- get_fuel_inputs_indirect(monitoringData, start_index)
+    inputs_raw$inputs_fertilizer <- get_fertilizer_inputs(monitoringData, start_index)
+    
+    # Livestock
+    inputs_livestock_infarm <- get_livestock_inputs(monitoringData, factors$factors_livestock, start_index)
+    inputs_raw$inputs_livestock_category <- inputs_livestock_infarm$livestock_category
+    inputs_raw$inputs_livestock_species <- inputs_livestock_infarm$livestock_species
+    inputs_raw$inputs_livestock_outfarm <- inputs_livestock_infarm$livestock_outfarm
+    inputs_raw$inputs_grazing_management <- inputs_livestock_infarm$grazing_management
+    
+    ## Yearly parcel inputs
+    
+    # Landuse
+    inputs_raw$inputs_landuse <- get_landuse_inputs(monitoringData, start_index)
+    
+    # Organic amendments
+    inputs_raw$inputs_organicmatter <- get_organicmatter_inputs(monitoringData, factors$factors_organicmatter, start_index)
+    
+    # Monthly grazing
+    inputs_raw$inputs_grazing_monthly <- get_grazing_inputs_monthly(monitoringData, start_index)
+    
+    # Tillage
+    inputs_raw$inputs_tillage <- get_tillage_inputs(monitoringData, start_index)
+    
+    # Irrigation
+    inputs_raw$inputs_irrigation <- get_irrigation_inputs(monitoringData, start_index)
+    if (settings$fill_missing_irrigation) {
+      inputs_raw$inputs_irrigation <- inputs_raw$inputs_irrigation %>%
+        mutate(irrigation = if_else(is.na(irrigation), FALSE, irrigation))
+      log4r::warn(my_logger, "Filling missing irrigation values: assuming non-irrigated for missing data.")
+    }
+    
+    # Annual crops and fallow
+    inputs_annualcrops_fallow <- get_annualcrops_fallow_inputs(monitoringData, start_index)
+    inputs_raw$inputs_annualcrops <- inputs_annualcrops_fallow$inputs_annual_crops
+    inputs_raw$inputs_baresoil <- inputs_annualcrops_fallow$inputs_bare_soil
+    
+    # Perennial crops and trees
+    inputs_perennials <- get_perennials_inputs(monitoringData, start_index)
+    inputs_raw$inputs_perennialcrops <- inputs_perennials$inputs_perennialcrops #Data for tree biomass calculation
+    inputs_raw$inputs_perennialprod <- inputs_perennials$inputs_perennialprod #Harvest and residue from perennial crops, including trees
+    inputs_raw$inputs_trees_felled <- get_felled_trees_inputs(monitoringData, start_index)
+    
+    # Pasture
+    inputs_raw$inputs_pasture <- get_pasture_inputs(monitoringData, start_index)
+    
+    
+    ## Outputs raw data in xlsx format and returns
+    # this is only for extracting raw data
+    if (settings$output_xlsx_inputs_raw) {
+      save_dir_xlsx <- 'output/xlsx_raw_inputs'
+      ifelse (!dir.exists(save_dir_xlsx), dir.create(save_dir_xlsx, recursive = TRUE), unlink(paste0(save_dir_xlsx,"/", output_name, ".xlsx"))) 
+      inputs_temp <- clean_raw_inputs(inputs_raw)
+      write_list_to_xlsx(inputs_temp, path = save_dir_xlsx, prefix = output_name)
+      return()
+    }
+    
+    log4r::info(my_logger, "Finished farm data extraction.")
+  } else {
 
-  ## Yearly parcel inputs
-
-  # Landuse
-  inputs_raw$inputs_landuse <- get_landuse_inputs(monitoringData, start_index)
-  
-  # Organic amendments
-  inputs_raw$inputs_organicmatter <- get_organicmatter_inputs(monitoringData, factors$factors_organicmatter, start_index)
-  
-  # Monthly grazing
-  inputs_raw$inputs_grazing_monthly <- get_grazing_inputs_monthly(monitoringData, start_index)
-  
-  # Tillage
-  inputs_raw$inputs_tillage <- get_tillage_inputs(monitoringData, start_index)
-  
-  # Irrigation
-  inputs_raw$inputs_irrigation <- get_irrigation_inputs(monitoringData, start_index)
-  if (settings$fill_missing_irrigation) {
-    inputs_raw$inputs_irrigation <- inputs_raw$inputs_irrigation %>%
-      mutate(irrigation = if_else(is.na(irrigation), FALSE, irrigation))
-    log4r::warn(my_logger, "Filling missing irrigation values: assuming non-irrigated for missing data.")
+    # Read farm data from csv files
+    farm_csv_path <- file.path(inputs_path, "farm_data_csv")
+    farm_csv <- dir(farm_csv_path)
+    rename_input <- function(x) {paste0("inputs_", sub(pattern = "(.*)\\..*$", replacement = "\\1", x))}
+    farm_inputs <- sapply(farm_csv, rename_input)
+    inputs_raw <- list()
+    for(i in 1:length(farm_inputs)) {
+      inputs_raw[[farm_inputs[i]]] <- read_csv(file.path(farm_csv_path, farm_csv[i]))
+    }
+    ## Define start index of yearly data
+    years <- sort(unique(inputs_raw$inputs_landuse$year))
+    start_index <- inputs_raw$inputs_farm_fixed$project_start_year - years[1] - 2
+    project_start_year <- as.numeric(inputs_raw$inputs_farm_fixed$project_start_year)
+    
   }
-  
-  # Annual crops and fallow
-  inputs_annualcrops_fallow <- get_annualcrops_fallow_inputs(monitoringData, start_index)
-  inputs_raw$inputs_annualcrops <- inputs_annualcrops_fallow$inputs_annual_crops
-  inputs_raw$inputs_baresoil <- inputs_annualcrops_fallow$inputs_bare_soil
-
-  # Perennial crops and trees
-  inputs_perennials <- get_perennials_inputs(monitoringData, start_index)
-  inputs_raw$inputs_perennialcrops <- inputs_perennials$inputs_perennialcrops #Data for tree biomass calculation
-  inputs_raw$inputs_perennialprod <- inputs_perennials$inputs_perennialprod #Harvest and residue from perennial crops, including trees
-  inputs_raw$inputs_trees_felled <- get_felled_trees_inputs(monitoringData, start_index)
-  
-  # Pasture
-  inputs_raw$inputs_pasture <- get_pasture_inputs(monitoringData, start_index)
 
   # NPP
   inputs_raw$inputs_npp <- get_npp_inputs(npp_data)
-  
-  
-  ## Outputs raw data in xlsx format and returns
-  # this is only for extracting raw data
-  if (settings$output_xlsx_inputs_raw) {
-    save_dir_xlsx <- 'output/xlsx_raw_inputs'
-    ifelse (!dir.exists(save_dir_xlsx), dir.create(save_dir_xlsx, recursive = TRUE), unlink(paste0(save_dir_xlsx,"/", output_name, ".xlsx"))) 
-    inputs_temp <- clean_raw_inputs(inputs_raw)
-    write_list_to_xlsx(inputs_temp, path = save_dir_xlsx, prefix = output_name)
-    return()
-  }
-  
-  log4r::info(my_logger, "Finished farm data extraction.")
+
   
   ## Farm data processing -----------------------------------------------------
   inputs_processed <- inputs_raw
 
   # Join raw data with periods that define project and baseline years based on the given project start year
   periods <- get_periods(
-    monitoringData, 
-    inputs_processed$inputs_farm_fixed$project_start_year,
+    years, 
+    project_start_year,
     start_index
   )
   
@@ -279,21 +297,23 @@ carbonplus_main <- function(settings, local_run_farmId){
     inputs_processed$inputs_grazing_cover,
     inputs_processed$inputs_grazing_parcels
     )
-  
+
   inputs_processed$inputs_baresoil <- process_baresoil_inputs(
     inputs_raw$inputs_baresoil,
-    monitoringData,
+    years,
     start_index,
-    periods
+    periods,
+    inputs_processed$inputs_parcel_fixed
     )
   
   inputs_processed$inputs_tillage <- process_tillage_inputs(
     inputs_raw$inputs_tillage,
     factors$factors_tillage,
-    monitoringData,
+    years,
     farm_EnZ,
     start_index,
-    periods
+    periods,
+    inputs_processed$inputs_parcel_fixed
   )
 
   inputs_processed$inputs_fuel_indirect <- process_indirect_fuel_inputs(
@@ -521,9 +541,9 @@ carbonplus_main <- function(settings, local_run_farmId){
     group_by(scenario, year) %>% 
     summarise(total=sum(total_tC)/sum(inputs_processed$inputs_parcel_fixed$area), .groups='keep')
   cinputs <- ggplot(Cinp_long %>% filter(!is.na(tC_ha)), aes(x=year, y=tC_ha, fill=Cinput_type)) +
-    geom_vline(xintercept=as.numeric(monitoringData$projectStartYear)-0.5, linetype="dashed", color = "black") +
-    geom_text(aes(x=as.numeric(monitoringData$projectStartYear)-0.4, y=0, label="Project"), vjust=1, hjust=0) +
-    geom_text(aes(x=as.numeric(monitoringData$projectStartYear)-0.6, y=0, label="Baseline"), vjust=1, hjust=1) +
+    geom_vline(xintercept=project_start_year-0.5, linetype="dashed", color = "black") +
+    geom_text(aes(x=project_start_year-0.4, y=0, label="Project"), vjust=1, hjust=0) +
+    geom_text(aes(x=project_start_year-0.6, y=0, label="Baseline"), vjust=1, hjust=1) +
     geom_bar(stat="identity") +
     # geom_line() + 
     geom_point(data=all_scenario_tots %>% filter(scenario=='projected_baseline'), aes(x=year, y=total, fill='projected baseline (total)'), size=3) +
@@ -542,7 +562,7 @@ carbonplus_main <- function(settings, local_run_farmId){
   #             tC_ha = tC/sum(area),
   #             .groups='drop') # sum over all parcels
   # cinputs2 <- ggplot(Cinp_long2 %>% filter(!is.na(tC_ha)), aes(x=factor(year), y=tC_ha, fill=Cinput_type, group=scenario, color=scenario)) +
-  #   # geom_vline(xintercept=as.numeric(monitoringData$projectStartYear)-0.5, linetype="dashed", color = "black") +
+  #   # geom_vline(xintercept=project_start_year-0.5, linetype="dashed", color = "black") +
   #   geom_bar(stat="identity", position='dodge', linewidth=1) +
   #   labs(title = "Total C inputs by type over time (including dynamic baseline)") +
   #   scale_color_manual(values = c("grey95","black", "grey50")) +
@@ -559,7 +579,7 @@ carbonplus_main <- function(settings, local_run_farmId){
     mutate(tC_ha = tC/area)
   nparcels <- nrow(inputs_processed$inputs_parcel_fixed)
   parcelC_plot <- ggplot(parcelC %>% filter(!is.na(tC_ha)), aes(x=year, y=tC_ha, fill=Cinput_type)) + #, group=year, fill=year)) +
-    geom_vline(xintercept=as.numeric(monitoringData$projectStartYear)-0.5, linetype="dashed", color = "black") +
+    geom_vline(xintercept=project_start_year-0.5, linetype="dashed", color = "black") +
     geom_bar(stat="identity", position="stack") +
     facet_wrap(~parcel_name, ncol=5) +
     labs(title = "Total C inputs per parcel over time", y='tonnes C per hectare') +
@@ -580,7 +600,7 @@ carbonplus_main <- function(settings, local_run_farmId){
   emissions_clean$source[emissions_clean$source == "kg_manure_indirect"] <- "livestock (manure indirect, N2O)"
   emissions_clean$source[emissions_clean$source == "kg_n_fixing"] <- "N-fixing crops"
   emission_plot <- ggplot(emissions_clean %>% filter(!is.na(kgCO2_eq)), aes(x=year, y=kgCO2_eq, fill=source)) +
-    geom_vline(xintercept=as.numeric(monitoringData$projectStartYear)-0.5, linetype="dashed", color = "black") +
+    geom_vline(xintercept=project_start_year-0.5, linetype="dashed", color = "black") +
     geom_bar(stat="identity", width=0.66) +
     theme_bw() +
     scale_fill_brewer(palette = "Set1") + 

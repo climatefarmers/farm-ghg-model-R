@@ -1,0 +1,127 @@
+year,species,db_reference,grazing_days,amount
+2018,dairy cows,mature females (> 2 years),0,0
+2018,cattle,mature females (non-dairy),365,54
+2018,cattle,mature males,365,2
+2018,cattle,growing cattle (6 - 24 months),365,8
+2018,cattle,calves (< 6 months),365,23
+2018,swine,sows,365,42
+2018,swine,boars,0,0
+2018,swine,finishers (3 - 6 months),0,0
+2018,swine,piglets,365,504
+2018,swine,other swine,365,46
+2018,chicken,layer hens,0,0
+2018,chicken,broilers,0,0
+2018,chicken,other chicken,0,0
+2018,turkeys,turkeys,0,0
+2018,sheep,mature females (> 1 year),0,0
+2018,sheep,mature males (> 1 year),0,0
+2018,sheep,lambs (< 1 year),0,0
+2018,goats,mature females (> 1 year),365,4
+2018,goats,mature males (> 1 year),365,1
+2018,goats,goat kids (< 1 year),365,12
+2018,ducks,ducks,0,0
+2019,dairy cows,mature females (> 2 years),0,0
+2019,cattle,mature females (non-dairy),365,50
+2019,cattle,mature males,365,2
+2019,cattle,growing cattle (6 - 24 months),365,14
+2019,cattle,calves (< 6 months),365,14
+2019,swine,sows,365,30
+2019,swine,boars,0,0
+2019,swine,finishers (3 - 6 months),0,0
+2019,swine,piglets,365,360
+2019,swine,other swine,365,116
+2019,chicken,layer hens,0,0
+2019,chicken,broilers,0,0
+2019,chicken,other chicken,0,0
+2019,turkeys,turkeys,0,0
+2019,sheep,mature females (> 1 year),0,0
+2019,sheep,mature males (> 1 year),0,0
+2019,sheep,lambs (< 1 year),0,0
+2019,goats,mature females (> 1 year),365,4
+2019,goats,mature males (> 1 year),0,0
+2019,goats,goat kids (< 1 year),365,12
+2019,ducks,ducks,0,0
+2020,dairy cows,mature females (> 2 years),0,0
+2020,cattle,mature females (non-dairy),365,53
+2020,cattle,mature males,365,3
+2020,cattle,growing cattle (6 - 24 months),365,6
+2020,cattle,calves (< 6 months),365,11
+2020,swine,sows,365,29
+2020,swine,boars,0,0
+2020,swine,finishers (3 - 6 months),0,0
+2020,swine,piglets,365,348
+2020,swine,other swine,365,73
+2020,chicken,layer hens,0,0
+2020,chicken,broilers,0,0
+2020,chicken,other chicken,0,0
+2020,turkeys,turkeys,0,0
+2020,sheep,mature females (> 1 year),0,0
+2020,sheep,mature males (> 1 year),0,0
+2020,sheep,lambs (< 1 year),0,0
+2020,goats,mature females (> 1 year),365,5
+2020,goats,mature males (> 1 year),365,1
+2020,goats,goat kids (< 1 year),365,15
+2020,ducks,ducks,0,0
+2021,dairy cows,mature females (> 2 years),0,0
+2021,cattle,mature females (non-dairy),365,36
+2021,cattle,mature males,365,3
+2021,cattle,growing cattle (6 - 24 months),365,13
+2021,cattle,calves (< 6 months),365,6
+2021,swine,sows,365,26
+2021,swine,boars,0,0
+2021,swine,finishers (3 - 6 months),0,0
+2021,swine,piglets,365,312
+2021,swine,other swine,365,30
+2021,chicken,layer hens,0,0
+2021,chicken,broilers,0,0
+2021,chicken,other chicken,0,0
+2021,turkeys,turkeys,0,0
+2021,sheep,mature females (> 1 year),365,3
+2021,sheep,mature males (> 1 year),0,0
+2021,sheep,lambs (< 1 year),365,9
+2021,goats,mature females (> 1 year),365,5
+2021,goats,mature males (> 1 year),0,0
+2021,goats,goat kids (< 1 year),365,15
+2021,ducks,ducks,0,0
+2022,dairy cows,mature females (> 2 years),0,0
+2022,cattle,mature females (non-dairy),365,34
+2022,cattle,mature males,365,3
+2022,cattle,growing cattle (6 - 24 months),365,8
+2022,cattle,calves (< 6 months),365,14
+2022,swine,sows,365,16
+2022,swine,boars,0,0
+2022,swine,finishers (3 - 6 months),0,0
+2022,swine,piglets,365,192
+2022,swine,other swine,365,66
+2022,chicken,layer hens,0,0
+2022,chicken,broilers,0,0
+2022,chicken,other chicken,0,0
+2022,turkeys,turkeys,0,0
+2022,sheep,mature females (> 1 year),365,2
+2022,sheep,mature males (> 1 year),0,0
+2022,sheep,lambs (< 1 year),365,6
+2022,goats,mature females (> 1 year),365,8
+2022,goats,mature males (> 1 year),0,0
+2022,goats,goat kids (< 1 year),365,24
+2022,ducks,ducks,0,0
+2023,dairy cows,mature females (> 2 years),0,0
+2023,cattle,mature females (non-dairy),365,22
+2023,cattle,mature males,365,2
+2023,cattle,growing cattle (6 - 24 months),365,5
+2023,cattle,calves (< 6 months),365,14
+2023,swine,sows,365,8
+2023,swine,boars,0,0
+2023,swine,finishers (3 - 6 months),0,0
+2023,swine,piglets,365,96
+2023,swine,other swine,365,15
+2023,chicken,layer hens,0,0
+2023,chicken,broilers,0,0
+2023,chicken,other chicken,0,0
+2023,turkeys,turkeys,0,0
+2023,sheep,mature females (> 1 year),365,7
+2023,sheep,mature males (> 1 year),0,0
+2023,sheep,lambs (< 1 year),365,21
+2023,goats,mature females (> 1 year),365,8
+2023,goats,mature males (> 1 year),365,1
+2023,goats,goat kids (< 1 year),365,24
+2023,ducks,ducks,0,0

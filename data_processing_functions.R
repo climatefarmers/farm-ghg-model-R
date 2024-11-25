@@ -1185,20 +1185,15 @@ process_pasture_inputs <- function (inputs_pasture, inputs_parcel_fixed, factors
   # pasture_inputs <- rbind(pasture_inputs, pasture_inputs %>% filter(scenario=='year0') %>% mutate(scenario='baseline'))
 }
 
-process_tillage_inputs <- function(inputs_tillage, factors_tillage, monitoringData, farm_EnZ, start_index, periods) {
+process_tillage_inputs <- function(inputs_tillage, factors_tillage, years, farm_EnZ, start_index, periods, parcels) {
   # create a dataframe displaying the monthly tillage events
   # based on the farmer-reported tillage events
   # note: this is very similar to the process_baresoil_inputs() function
   
-  years <- monitoringData$yearlyFarmData$year
-  parcels <- tibble(
-    parcel_name = monitoringData$yearlyFarmData$parcelLevelData[[start_index]]$parcelFixedValues$parcelName,
-    parcel_id   = monitoringData$yearlyFarmData$parcelLevelData[[start_index]]$parcelFixedValues$parcelID
-  )
   months <- seq(1,12)
   
   # create a dataframe with all possible combinations of parcels, years and months
-  
+
   if (start_index == 1) {
     tillage <- tibble(expand_grid(parcel_id = parcels$parcel_id, year = years, month = months))
   } else {
@@ -1211,7 +1206,7 @@ process_tillage_inputs <- function(inputs_tillage, factors_tillage, monitoringDa
   tillage$percent_tilled <- NA
   for (i in 1:nrow(inputs_tillage)) {
     till_event <- inputs_tillage[i,]
-    
+
     # set the tillage info to TRUE for this month
     row_match <- which(tillage$parcel_id == till_event$parcel_id & 
                          tillage$year == as.numeric(substr(till_event$date, 1, 4)) & 
@@ -1235,16 +1230,11 @@ process_tillage_inputs <- function(inputs_tillage, factors_tillage, monitoringDa
 }
 
 
-process_baresoil_inputs <- function(inputs_baresoil, monitoringData, start_index, periods) {
+process_baresoil_inputs <- function(inputs_baresoil, years, start_index, periods, parcels) {
   # create a dataframe displaying the soil cover in each month
   # based on the farmer-reported bare soil events
   # this is needed for the rothC model
-  
-  years <- monitoringData$yearlyFarmData$year
-  parcels <- tibble(
-    parcel_name = monitoringData$yearlyFarmData$parcelLevelData[[start_index]]$parcelFixedValues$parcelName,
-    parcel_id   = monitoringData$yearlyFarmData$parcelLevelData[[start_index]]$parcelFixedValues$parcelID
-  )
+
   months <- seq(1,12)
   
   # create a dataframe with all possible combinations of parcels, years and months
@@ -1254,19 +1244,20 @@ process_baresoil_inputs <- function(inputs_baresoil, monitoringData, start_index
     bare_soil <- tibble(expand_grid(parcel_id = parcels$parcel_id, year = years[-(1:(start_index-1))], month = months))
   }
   bare_soil$parcel_name <- parcels$parcel_name[match(bare_soil$parcel_id, parcels$parcel_id)]
-  
+
   # add the bareground periods
   bare_soil$bareground <- FALSE
   bare_soil$percent_area <- 0
   if (all(!is.na(inputs_baresoil))) {
     # remove those with no start/end date -- we cannot process these
     inputs_baresoil <- inputs_baresoil %>% 
-      filter(!is.na(start_date) & !is.na(end_date)) %>%
-      filter(start_date != "" & end_date != "")
+      filter(!is.na(start_date) & !is.na(end_date)) 
+    inputs_baresoil <- inputs_baresoil%>%
+      mutate(start_date = as.Date(start_date), end_date = as.Date(end_date))
     
     for (i in 1:nrow(inputs_baresoil)) {
       bare_event <- inputs_baresoil[i,]
-      
+
       # extract the year-month pairs from this bare ground event (ie between the start and end dates)
       months_bare <- seq(as.Date(bare_event$start_date), as.Date(bare_event$end_date), by="month")
       months_bare <- tibble(

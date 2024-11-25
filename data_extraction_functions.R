@@ -1287,15 +1287,13 @@ get_fixed_parcel_inputs <- function(monitoringData, start_index) {
 }
 
 ## Function extracts baseline and project years based on the project start year
-get_periods <- function(monitoringData, project_start_year, start_index) {
-  
-  if (start_index == 1) {
-    year <- sort(monitoringData$yearlyFarmData$year)
-  } else {
-    year <- sort(monitoringData$yearlyFarmData$year[-(1:(start_index-1))])
-  }
+get_periods <- function(years, project_start_year, start_index) {
 
-  i <- which(year == project_start_year)
+  if (start_index != 1) {
+    years <- years[-(1:(start_index-1))]
+  }
+  
+  i <- which(years == project_start_year)
   
   # Check: is project start year in the data?
   if (length(i) == 0) {
@@ -1306,15 +1304,14 @@ get_periods <- function(monitoringData, project_start_year, start_index) {
   if (i < 4) {
     log4r::error(my_logger, "Three baseline years are required but data has less than 3 years before project start year.")
   }
-  
+
   # Create vectors of project years and periods
-  year_index <- seq(1:length(year)) - (i - 1)
+  year_index <- seq(1:length(years)) - (i - 1)
   year_index[year_index < 1] <- year_index[year_index < 1] - 1  # Sets baseline years to negative values
   periods <- data.frame(
-    year = year,
-    year_index = year_index,
-    period = ifelse(year < project_start_year, "baseline", "project")
-  )
+    year = years,
+    year_index = year_index
+  ) %>% mutate(period = if_else(year < project_start_year, "baseline", "project"))
   
   # # Filter out past years not used as baseline? Maybe later when calculating baseline values.
   # periods <- periods %>% filter(year >= project_start_year-3)

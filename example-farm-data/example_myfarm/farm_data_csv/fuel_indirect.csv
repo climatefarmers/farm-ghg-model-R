@@ -1,0 +1,8 @@
+service,service_detail,service_category,area_amount,area_units,year
+,,,NA,hectares,2018
+,,,NA,hectares,2019
+,,,NA,hectares,2020
+harvesting,Haylage,forage-harvester-haylage,15.8,hectares,2021
+planting,Direct drill,planting-grain-drill,17.5,hectares,2021
+harvesting,Haylage,forage-harvester-haylage,15.8,hectares,2022
+,,,NA,hectares,2023

@@ -1,0 +1,5 @@
+year,parcel_name,parcel_id,cohort_id,tree_index,date,species,category,type,amount,units,dry
+2021,parcel1,9815d0ed-21b1-4267-a8e6-76e19be7de5b,NA,1,NA,NA,harvest,NA,NA,tonnes - fresh,FALSE
+2021,parcel1,9815d0ed-21b1-4267-a8e6-76e19be7de5b,NA,1,NA,NA,residue,NA,NA,tonnes - fresh,FALSE
+2022,parcel1,9815d0ed-21b1-4267-a8e6-76e19be7de5b,NA,1,NA,NA,harvest,NA,NA,tonnes - fresh,FALSE
+2022,parcel1,9815d0ed-21b1-4267-a8e6-76e19be7de5b,NA,1,NA,NA,residue,NA,NA,tonnes - fresh,FALSE
